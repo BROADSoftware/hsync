@@ -15,29 +15,52 @@
  */
 package com.kappaware.hsync;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 
 import com.kappaware.hsync.config.ConfigurationException;
 
 public class HdfsTree extends Tree {
+	FileSystem fileSystem;
 	
-	public HdfsTree(FileSystem fs, String rootPath) throws ConfigurationException, IOException {
-		this.root = rootPath;
-		Path path = new Path(this.root);
-		if(!fs.isDirectory(path)) {
+	public HdfsTree(FileSystem fileSystem, String root) throws ConfigurationException, IOException {
+		this.fileSystem = fileSystem;
+		Path rootPath = new Path(root);
+		this.root = Path.getPathWithoutSchemeAndAuthority(rootPath).toString();
+		if(!this.fileSystem.isDirectory(rootPath)) {
 			throw new ConfigurationException(String.format("HDFS path '%s' does not exists, or is not a folder", this.root));
 		}
-		RemoteIterator<LocatedFileStatus> it = fs.listFiles(path, true);
-		while(it.hasNext()) {
-			LocatedFileStatus fileStatus = it.next();
-			System.out.println(fileStatus.toString());
-		}
-		
+		dig(rootPath);
 	}
 
+	private void dig(Path folderPath) throws FileNotFoundException, IllegalArgumentException, IOException {
+		FileStatus[] fileStatuses = this.fileSystem.listStatus(folderPath);
+		for(FileStatus fs : fileStatuses) {
+			//System.out.println(fs.toString());
+			if(fs.isDirectory()) {
+				Folder folder = new Folder(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort());
+				this.folders.add(folder);
+				dig(fs.getPath());
+			} else {
+				File file = new File(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime(), fs.getLen());
+				this.files.add(file);
+				this.fileByName.put(file.path, file);
+			}
+		}
+	}
+	
+	/**
+	 * Adjust the path relative to our root
+	 * @param path
+	 * @return
+	 */
+	String adjustPath(Path path) {
+		Path p2 = Path.getPathWithoutSchemeAndAuthority(path);
+		return p2.toString().substring(this.root.length()+1);
+	}
+	
 }
