@@ -82,6 +82,9 @@ public class Main {
 		FileSystem fs = FileSystem.get(config);
 		Tree hdfsTree = new HdfsTree(fs, parameters.getHdfsPath());
 		System.out.println(hdfsTree.toString());
+		
+		Tree localTree = new LocalTree(parameters.getLocalPath());
+		System.out.println(localTree.toString());
 		/*
 		YamlReport report = new YamlReport();
 
