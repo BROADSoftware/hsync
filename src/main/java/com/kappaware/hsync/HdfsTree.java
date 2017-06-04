@@ -40,14 +40,12 @@ public class HdfsTree extends Tree {
 	private void dig(Path folderPath) throws FileNotFoundException, IllegalArgumentException, IOException {
 		FileStatus[] fileStatuses = this.fileSystem.listStatus(folderPath);
 		for(FileStatus fs : fileStatuses) {
-			//System.out.println(fs.toString());
 			if(fs.isDirectory()) {
 				Folder folder = new Folder(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort());
-				this.folders.add(folder);
+				this.folderByName.put(folder.path, folder);
 				dig(fs.getPath());
 			} else {
 				File file = new File(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime(), fs.getLen());
-				this.files.add(file);
 				this.fileByName.put(file.path, file);
 			}
 		}

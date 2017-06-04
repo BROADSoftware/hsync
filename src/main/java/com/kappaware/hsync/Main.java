@@ -15,8 +15,11 @@
  */
 package com.kappaware.hsync;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -82,20 +85,19 @@ public class Main {
 		FileSystem fs = FileSystem.get(config);
 		Tree hdfsTree = new HdfsTree(fs, parameters.getHdfsPath());
 		System.out.println(hdfsTree.toString());
-		
 		Tree localTree = new LocalTree(parameters.getLocalPath());
 		System.out.println(localTree.toString());
-		/*
-		YamlReport report = new YamlReport();
-
+		localTree.adjustPermissions(parameters.getOwner(), parameters.getGroup(), parameters.getFileMode(), parameters.getFolderMode());
+		System.out.println(localTree.toString());
+		
+		TreeDiff treeDiff = new TreeDiff(localTree, hdfsTree);
+		
 		if (Utils.hasText(parameters.getReportFile())) {
 			Writer out = null;
 			try {
 				out = new BufferedWriter(new FileWriter(parameters.getReportFile(), false));
-				out.write("# jdchive generated file.\n\n");
-				String x = YamlUtils.yaml2String(report);
-				out.write(x);
-				//YamlUtils.writeYaml(out, report);
+				out.write(parameters.toYaml());
+				treeDiff.toYaml(out);
 			} finally {
 				if (out != null) {
 					out.close();
@@ -103,7 +105,6 @@ public class Main {
 			}
 			log.info(String.format("Report file:'%s' has been generated", parameters.getReportFile()));
 		}
-		*/
 		return 0;
 	}
 }

@@ -7,7 +7,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
 import com.kappaware.hsync.config.ConfigurationException;
@@ -34,12 +33,11 @@ public class LocalTree extends Tree {
 			if (file.isDirectory()) {
 				Path path = file.toPath();
 				Folder folder = new Folder(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path));
-				this.folders.add(folder);
+				this.folderByName.put(folder.path, folder);
 				dig(file);
 			} else {
 				Path path = file.toPath();
 				File fl = new File(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path), Files.size(path));
-				this.files.add(fl);
 				this.fileByName.put(fl.path, fl);
 			}
 

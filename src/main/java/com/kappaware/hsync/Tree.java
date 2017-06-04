@@ -16,6 +16,7 @@
 package com.kappaware.hsync;
 
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,14 @@ import java.util.Vector;
 
 public class Tree {
 	
-	static public class Folder {
+	public interface Node {
+		String getOwner();
+		String getGroup();
+		int getMode();
+		String toYaml();
+	}
+	
+	static public class Folder implements Comparable<Folder>, Node {
 		public String path;
 		public String owner;
 		public String group;
@@ -36,14 +44,37 @@ public class Tree {
 			this.mode = mode;
 		}
 
+		@Override
+		public int compareTo(Folder o) {
+			return this.path.compareTo(o.path);
+		}
 
 		@Override
 		public String toString() {
 			return String.format("%s  owner:%s  group:%s  mode:%04o ", path, owner, group, mode);
 		}
+
+		@Override
+		public String toYaml() {
+			return String.format("{ path: \"%s\",  owner: \"%s\",  group: \"%s\",  mode: %04o }", path, owner, group, mode);
+		}
+		
+		@Override
+		public String getOwner() {
+			return this.owner;
+		}
+		@Override
+		public String getGroup() {
+			return this.group;
+		}
+
+		@Override
+		public int getMode() {
+			return this.mode;
+		}
 	}
 	
-	static public class File {
+	static public class File implements Comparable<File>, Node {
 		public String path;
 		public String owner;
 		public String group;
@@ -64,19 +95,45 @@ public class Tree {
 		public String toString() {
 			return String.format("%s  owner:%s  group:%s  mode:%04o modTime:%d  size:%d", path, owner, group, mode, this.modificationTime, size);
 		}
+
+		@Override
+		public String toYaml() {
+			return String.format("{ path: \"%s\",  owner: \"%s\",  group: \"%s\",  mode: %04o, modTime: \"%s\",  size: %d }", path, owner, group, mode, Utils.printIsoDateTime(this.modificationTime), size);
+		}
+
+		@Override
+		public int compareTo(File o) {
+			return this.path.compareTo(o.path);
+		}
+
+		@Override
+		public String getOwner() {
+			return this.owner;
+		}
+		@Override
+		public String getGroup() {
+			return this.group;
+		}
+		@Override
+		public int getMode() {
+			return this.mode;
+		}
 	}
 	public String root;
-	public List<Folder> folders = new Vector<Folder>();
-	public List<File> files = new Vector<File>();
 	public Map<String, File> fileByName = new HashMap<String, File>();
+	public Map<String, Folder> folderByName = new HashMap<String, Folder>();
 	
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("ROOT: " + this.root + "\nFolders:\n");
+		List<Folder> folders = new Vector<Folder>(this.folderByName.values());
+		Collections.sort(folders);
 		for(Folder f : folders) {
 			sb.append("\t" + f.toString() + "\n");
 		}
+		List<File> files = new Vector<File>(this.fileByName.values());
+		Collections.sort(files);
 		sb.append("Files:\n");
 		for(File f : files) {
 			sb.append("\t" + f.toString() + "\n");
@@ -84,5 +141,33 @@ public class Tree {
 		return sb.toString();
 	}
 	
+	public void adjustPermissions(String owner, String group, Integer fileMode, Integer folderMode) {
+		if(owner != null || group != null || folderMode != null) {
+			for(Folder f : this.folderByName.values()) {
+				if(owner != null) {
+					f.owner = owner;
+				}
+				if(group != null) {
+					f.group = group;
+				}
+				if(folderMode != null) {
+					f.mode = folderMode;
+				}
+			}
+		}
+		if(owner != null || group != null || fileMode != null) {
+			for(File f : this.fileByName.values()) {
+				if(owner != null) {
+					f.owner = owner;
+				}
+				if(group != null) {
+					f.group = group;
+				}
+				if(fileMode != null) {
+					f.mode = fileMode;
+				}
+			}
+		}
+	}
 	
 }

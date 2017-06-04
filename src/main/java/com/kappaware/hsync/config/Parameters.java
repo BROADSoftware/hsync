@@ -33,10 +33,9 @@ import joptsimple.OptionSpec;
 
 public class Parameters {
 	static Logger log = LoggerFactory.getLogger(Parameters.class);
-	
+
 	private String hdfsPath;
 	private String localPath;
-
 	private String principal;
 	private String keytab;
 	private String dumpConfigFile;
@@ -44,11 +43,15 @@ public class Parameters {
 	private List<String> configFiles;
 	private boolean dryRun;
 	private List<String> notifySinks;
+	private String owner;
+	private String group;
+	private Integer fileMode;
+	private Integer folderMode;
 
 	static OptionParser parser = new OptionParser();
 	static {
-		parser.formatHelpWith(new BuiltinHelpFormatter(120,2));
-	}	
+		parser.formatHelpWith(new BuiltinHelpFormatter(120, 2));
+	}
 	static OptionSpec<String> HDFS_PATH = parser.accepts("hdfsPath", "HDFS path").withRequiredArg().describedAs("/path/on/hdfs").ofType(String.class).required();
 	static OptionSpec<String> LOCAL_PATH = parser.accepts("localPath", "Local path").withRequiredArg().describedAs("/path/on/this/node").ofType(String.class).required();
 
@@ -60,7 +63,11 @@ public class Parameters {
 	static OptionSpec<?> DRY_RUN_OPT = parser.accepts("dryRun", "Perform no action");
 	static OptionSpec<String> NOTIFY_SINKS_OPT = parser.accepts("notifySinks", "Sink to push notification on each copied file").withRequiredArg().describedAs("<notificationSink>").ofType(String.class);
 
-	
+	static OptionSpec<String> OWNER_OPT = parser.accepts("owner", "owner of target files (Default: source one)").withRequiredArg().describedAs("user").ofType(String.class);
+	static OptionSpec<String> GROUP_OPT = parser.accepts("group", "group of target files (Default: source one)").withRequiredArg().describedAs("group").ofType(String.class);
+	static OptionSpec<String> FILE_MODE_OPT = parser.accepts("fileMode", "mode of target files (Default: source one)").withRequiredArg().describedAs("0XXX").ofType(String.class);
+	static OptionSpec<String> FOLDER_MODE_OPT = parser.accepts("folderMode", "mode of target folders (Default: source one)").withRequiredArg().describedAs("0XXX").ofType(String.class);
+
 	@SuppressWarnings("serial")
 	private static class MyOptionException extends Exception {
 		public MyOptionException(String message) {
@@ -68,7 +75,6 @@ public class Parameters {
 		}
 	}
 
-	
 	public Parameters(String[] argv) throws ConfigurationException {
 		try {
 			OptionSet result = parser.parse(argv);
@@ -84,19 +90,53 @@ public class Parameters {
 			this.configFiles = result.valuesOf(CONFIG_FILES_OPT);
 			this.dryRun = result.has(DRY_RUN_OPT);
 			this.notifySinks = result.valuesOf(NOTIFY_SINKS_OPT);
-			if(!this.hdfsPath.startsWith("/") && !this.hdfsPath.startsWith("hdfs://")) {
+			this.owner = result.valueOf(OWNER_OPT);
+			this.group = result.valueOf(GROUP_OPT);
+			if (result.has(FILE_MODE_OPT)) {
+				this.fileMode = parseOctal(result.valueOf(FILE_MODE_OPT));
+				if (this.fileMode == null || this.fileMode < 0 || this.fileMode > 0777) {
+					throw new ConfigurationException(String.format("Invalid value for 'fileMode' parameter: '%s'", result.valueOf(FILE_MODE_OPT)));
+				}
+			}
+			if (result.has(FOLDER_MODE_OPT)) {
+				this.folderMode = parseOctal(result.valueOf(FOLDER_MODE_OPT));
+				if (this.folderMode == null || this.folderMode < 0 || this.folderMode > 0777) {
+					throw new ConfigurationException(String.format("Invalid value for 'folderMode' parameter: '%s'", result.valueOf(FOLDER_MODE_OPT)));
+				}
+			}
+			if (!this.hdfsPath.startsWith("/") && !this.hdfsPath.startsWith("hdfs://")) {
 				throw new ConfigurationException(String.format("'%s' is not an absolute HDFS path", this.hdfsPath));
 			}
-			if(!this.localPath.startsWith("/")) {
+			if (!this.localPath.startsWith("/")) {
 				throw new ConfigurationException(String.format("'%s' is not an absolute local path", this.localPath));
 			}
-			if(Utils.isNullOrEmpty(this.principal) ^ Utils.isNullOrEmpty(this.keytab)) {
+			if (Utils.isNullOrEmpty(this.principal) ^ Utils.isNullOrEmpty(this.keytab)) {
 				throw new ConfigurationException("Both or none of --principal and --keytab must be defined");
 			}
 		} catch (OptionException | MyOptionException t) {
 			throw new ConfigurationException(usage(t.getMessage()));
 		}
 	}
+
+	public String toYaml() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("parameters:\n");
+		sb.append(String.format("  hdfsPath: %s\n", N(this.hdfsPath)));
+		sb.append(String.format("  localPath: %s\n", N(this.localPath)));
+		sb.append(String.format("  principal: %s\n", N(this.principal)));
+		sb.append(String.format("  keytab: %s\n", N(this.keytab)));
+		sb.append(String.format("  dumpConfigFile: %s\n", N(this.dumpConfigFile)));
+		sb.append(String.format("  reportFile: %s\n", N(this.reportFile)));
+		sb.append(String.format("  configFiles: %s", L(this.configFiles)));
+		sb.append(String.format("  dryRun: %s\n", B(this.dryRun)));
+		sb.append(String.format("  notifySinks: %s", L(this.notifySinks)));
+		sb.append(String.format("  owner: %s\n", N(this.owner)));
+		sb.append(String.format("  group: %s\n", N(this.group)));
+		sb.append(String.format("  fileMode: %s\n", O(this.fileMode)));
+		sb.append(String.format("  folderMode: %s\n", O(this.folderMode)));
+		return sb.toString();
+	}
+
 
 	private static String usage(String err) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -113,6 +153,50 @@ public class Parameters {
 		return baos.toString();
 	}
 
+	private static Integer parseOctal(String s) {
+		try {
+			return Integer.parseInt(s, 8);
+		} catch (Throwable t) {
+			return null;
+		}
+	}
+
+	
+	// -------------------------------------------------------------------------- Helper for Yaml stuff
+	
+	private static String N(String x) {
+		if (x == null) {
+			return "null";
+		} else {
+			return "\"" + x + "\"";
+		}
+	}
+
+	private static String O(Integer x) {
+		if (x == null) {
+			return "null";
+		} else {
+			return String.format("%04o", x);
+		}
+	}
+
+	private static String B(boolean b) {
+		return b ? "true" : "false";
+	}
+
+	private static String L(List<String> x) {
+		if (x == null || x.size() == 0) {
+			return "[]\n";
+		} else {
+			StringBuffer sb = new StringBuffer();
+			sb.append("\n");
+			for (String s : x) {
+				sb.append("  - " + N(s) + "\n");
+			}
+			return sb.toString();
+		}
+	}
+	
 	// --------------------------------------------------------------------------
 
 	public String getHdfsPath() {
@@ -151,5 +235,20 @@ public class Parameters {
 		return notifySinks;
 	}
 
-	
+	public String getOwner() {
+		return owner;
+	}
+
+	public String getGroup() {
+		return group;
+	}
+
+	public Integer getFileMode() {
+		return fileMode;
+	}
+
+	public Integer getFolderMode() {
+		return folderMode;
+	}
+
 }

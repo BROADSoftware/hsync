@@ -19,8 +19,11 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -89,4 +92,13 @@ public class Utils {
 		return !isEqual(o1, o2);
 	}
 
+	public static String printIsoDateTime(Long ts) {
+		if (ts != null) {
+			Calendar c = Calendar.getInstance();
+			c.setTimeInMillis(ts);
+			return DatatypeConverter.printDateTime(c);
+		} else {
+			return null;
+		}
+	}
 }
