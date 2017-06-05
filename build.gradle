@@ -47,10 +47,20 @@ dependencies {
 	compile "org.slf4j:slf4j-log4j12:$sl4jLog4jVersion"
 	compile "log4j:log4j:$log4jVersion"
  	compileAndJar "net.sf.jopt-simple:jopt-simple:$joptVersion"
-	//compileAndJar "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-	//compileAndJar "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.apache.hadoop:hadoop-common:$hadoopVersion"		
+    compile "org.apache.hadoop:hadoop-hdfs:$hadoopVersion"		
     testCompile 'junit:junit:4.12'
+    testCompile "org.apache.hadoop:hadoop-minicluster:$hadoopVersion"		
+	testCompile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+	testCompile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    
+}
+
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+    }
 }
 
 

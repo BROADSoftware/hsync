@@ -84,11 +84,11 @@ public class Main {
 		}
 		FileSystem fs = FileSystem.get(config);
 		Tree hdfsTree = new HdfsTree(fs, parameters.getHdfsPath());
-		System.out.println(hdfsTree.toString());
+		//System.out.println(hdfsTree.toString());
 		Tree localTree = new LocalTree(parameters.getLocalPath());
-		System.out.println(localTree.toString());
+		//System.out.println(localTree.toString());
 		localTree.adjustPermissions(parameters.getOwner(), parameters.getGroup(), parameters.getFileMode(), parameters.getFolderMode());
-		System.out.println(localTree.toString());
+		//System.out.println(localTree.toString());
 		
 		TreeDiff treeDiff = new TreeDiff(localTree, hdfsTree);
 		

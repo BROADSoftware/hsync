@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	 <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+    	<param name="Target" value="System.out" />
+    	<layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%d{ISO8601}] %-5p %c:%L %m %n" />
+        </layout>
+    </appender>
+
+	<!-- Shutdown a bunch of hadoop internal message  -->    
+ 	<logger name="org.apache.hadoop"><level value="warn"/></logger>
+ 	<logger name="org.mortbay"><level value="warn"/></logger>
+ 	<logger name="BlockStateChange"><level value="warn"/></logger>
+ 	<logger name="org.apache.hadoop.util.NativeCodeLoader"><level value="error"/></logger>
+ 	<logger name="org.apache.hadoop.metrics2.impl.MetricsConfig"><level value="error"/></logger>
+ 	<logger name="org.apache.hadoop.hdfs.server.datanode"><level value="error"/></logger>
+
+  	<!-- Wakeup some if interest (Start/stop) -->
+ 	<logger name="org.apache.hadoop.hdfs.MiniDFSCluster"><level value="info"/></logger>
+  	<!-- Wakeup some if interest (audit activity) -->
+ 	<logger name="org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit"><level value="warn"/></logger>
+   
+   
+ 	<logger name="com.kappaware"><level value="debug"/></logger>
+   
+   
+    <root>
+        <level value="info" /> 
+    	<appender-ref ref="STDOUT" />
+	</root>
+	
+</log4j:configuration>
+
+ 

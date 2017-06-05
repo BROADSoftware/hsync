@@ -57,8 +57,13 @@ public class HdfsTree extends Tree {
 	 * @return
 	 */
 	String adjustPath(Path path) {
+		//return path.toString();
 		Path p2 = Path.getPathWithoutSchemeAndAuthority(path);
-		return p2.toString().substring(this.root.length()+1);
+		if("/".equals(this.root)) {
+			return p2.toString();
+		} else {
+			return p2.toString().substring(this.root.length() + 1);
+		}
 	}
 	
 }
