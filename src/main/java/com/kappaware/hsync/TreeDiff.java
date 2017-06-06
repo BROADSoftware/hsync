@@ -12,14 +12,14 @@ import com.kappaware.hsync.Tree.Node;
 import com.kappaware.hsync.Tree.File;
 
 public class TreeDiff {
-	static public final String TMP_EXT = "tmp.hsync";
+	static public final String TMP_EXT = "tmp_hsync";
 	
 	private List<Folder> foldersToCreate = new Vector<Folder>();
 	private List<Folder> foldersToAdjust = new Vector<Folder>();
 	private List<File> filesToCreate = new Vector<File>();
 	private List<File> filesToReplace = new Vector<File>();
 	private List<File> filesToAdjust = new Vector<File>();
-	private List<File> filesToDelete = new Vector<File>();	// Only xxx.tmp.hsync (Remaining from a previous crashed run)
+	private List<File> filesToDelete = new Vector<File>();	// Only xxx.tmp_hsync (Remaining from a previous crashed run)
 
 	
 	public void toYaml(Writer w) throws IOException {

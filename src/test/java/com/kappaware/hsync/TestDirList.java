@@ -1,5 +1,6 @@
 package com.kappaware.hsync;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -38,25 +39,36 @@ public class TestDirList {
 	 * @throws IOException
 	 */
 	@Test
-	public void test00() throws IOException {
+	public void testDirList00Hdfs() throws IOException {
 		FileSystem fs = FileSystem.get(new Configuration());
 		fs.copyFromLocalFile(new Path("src/test/resources/log4j.xml"), new Path("/tests/test00/log4j.xml"));
 
-		DirList dirList = new DirList("/");
+		Ls dirList = Ls.hdfs("/");
 		System.out.println(dirList.toString());
 		Assert.assertNotNull(dirList.getByPath("/tests/test00"));
 		Assert.assertNotNull(dirList.getByPath("/tests/test00"));
 		Assert.assertNotNull(dirList.getByPath("/tests/test00/log4j.xml"));
 		
-		DirList dirList2 = new DirList("/tests");
+		Ls dirList2 = Ls.hdfs("/tests");
 		//System.out.println(dirList2.toString());
 		Assert.assertNotNull(dirList2.getByPath("test00"));
 		Assert.assertNotNull(dirList2.getByPath("test00/log4j.xml"));
 
-		DirList dirList3 = new DirList("/tests/test00");
+		Ls dirList3 = Ls.hdfs("/tests/test00");
 		//System.out.println(dirList3.toString());
 		Assert.assertNotNull(dirList3.getByPath("log4j.xml"));
 	}
+
+	@Test
+	public void testDirList01Local() throws IOException {
+		String lp = (new File("src/test/resources/test01")).getAbsolutePath();
+		Ls dirList = Ls.local(lp);
+		System.out.println(dirList.toString());
+		Assert.assertNotNull(dirList.getByPath("file0"));
+		Assert.assertNotNull(dirList.getByPath("folder1"));
+		Assert.assertNotNull(dirList.getByPath("folder1/subfolder1/subfile1"));
+	}
+
 
 
 }

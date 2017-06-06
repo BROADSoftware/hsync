@@ -15,7 +15,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-public class DirList {
+public class Ls {
 	private String root;
 	private List<Node> nodes = new Vector<Node>();
 	private Map<String, Node> nodeByPath = new HashMap<String, Node>();
@@ -28,16 +28,30 @@ public class DirList {
 		}
 	}
 
-	public DirList(String root) throws IOException {
-		this(FileSystem.get(new Configuration()), root);
-	}
 
-	public DirList(FileSystem fileSystem, String root) throws IOException {
+	/**
+	 * HDFS config (fs.defaultFS) is assumed to be set in core-site.xml
+	 * @param root
+	 * @return
+	 * @throws IOException
+	 */
+	static public Ls hdfs(String root) throws IOException {
+		return new Ls(FileSystem.get(new Configuration()), new Path(root));
+	}
+	
+
+	
+	static public Ls local(String root) throws IOException {
+		Configuration configuration = new Configuration();
+		configuration.set("fs.defaultFS", "file:///");
+		return new Ls(FileSystem.get(configuration), new Path(root));
+	}
+	
+	private Ls(FileSystem fileSystem, Path rootPath) throws IOException {
 		this.fileSystem = fileSystem;
-		Path rootPath = new Path(root);
 		this.root = Path.getPathWithoutSchemeAndAuthority(rootPath).toString();
 		if (!this.fileSystem.isDirectory(rootPath)) {
-			throw new IOException(String.format("HDFS path '%s' does not exists, or is not a folder", this.root));
+			throw new IOException(String.format("Path '%s' does not exists, or is not a folder", this.root));
 		}
 		dig(rootPath);
 		Collections.sort(nodes);
@@ -157,6 +171,10 @@ public class DirList {
 	
 	public Node getByPath(String path) {
 		return this.nodeByPath.get(path);
+	}
+	
+	public int size() {
+		return this.nodes.size();
 	}
 
 }

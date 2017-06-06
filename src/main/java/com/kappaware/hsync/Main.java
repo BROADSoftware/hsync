@@ -21,9 +21,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,11 +86,10 @@ public class Main {
 		}
 		FileSystem fs = FileSystem.get(config);
 		Tree hdfsTree = new HdfsTree(fs, parameters.getHdfsPath());
-		//System.out.println(hdfsTree.toString());
+		log.debug("\nHDFS: " + hdfsTree.toString());
 		Tree localTree = new LocalTree(parameters.getLocalPath());
-		//System.out.println(localTree.toString());
+		log.debug("\nLocal: " + localTree.toString());
 		localTree.adjustPermissions(parameters.getOwner(), parameters.getGroup(), parameters.getFileMode(), parameters.getFolderMode());
-		//System.out.println(localTree.toString());
 		
 		TreeDiff treeDiff = new TreeDiff(localTree, hdfsTree);
 		
@@ -105,6 +106,32 @@ public class Main {
 			}
 			log.info(String.format("Report file:'%s' has been generated", parameters.getReportFile()));
 		}
+		if(!parameters.isDryRun()) {
+			// --------------- First, cleanup dirty files
+			for(Tree.File file : treeDiff.getFilesToDelete()) {
+				Path path = concatPath(hdfsTree.root, file.path);
+				log.info(String.format("Will delete file '%s'", path.toString()));
+				fs.delete(path, false);
+			}
+			// ---------------- First, adjust folders
+			for(Tree.Folder folder : treeDiff.getFoldersToAdjust()) {
+				Path path = concatPath(hdfsTree.root, folder.path);
+				fs.setPermission(path, new FsPermission(folder.mode));
+				fs.setOwner(path, folder.owner, folder.group);
+			}
+			// ---------------- Now, create folder, in outer -> inner order, as folder or lexically ordered
+			for(Tree.Folder folder : treeDiff.getFoldersToCreate()) {
+				Path path = concatPath(hdfsTree.root, folder.path);
+				fs.mkdirs(path, new FsPermission(folder.mode));
+				fs.setOwner(path, folder.owner, folder.group);
+			}
+		}
+		
 		return 0;
 	}
+	
+	static private Path concatPath(String root, String path) {
+		return new Path(StringUtils.replace(root + "/" + path, "//", "/"));
+	}
+ 	
 }

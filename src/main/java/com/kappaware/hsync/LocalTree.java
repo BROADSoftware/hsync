@@ -32,7 +32,7 @@ public class LocalTree extends Tree {
 		for (java.io.File file : files) {
 			if (file.isDirectory()) {
 				Path path = file.toPath();
-				Folder folder = new Folder(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path));
+				Folder folder = new Folder(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path));
 				this.folderByName.put(folder.path, folder);
 				dig(file);
 			} else {
@@ -40,9 +40,7 @@ public class LocalTree extends Tree {
 				File fl = new File(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path), Files.size(path));
 				this.fileByName.put(fl.path, fl);
 			}
-
 		}
-
 	}
 
 	private String adjustPath(java.io.File file) {
@@ -57,9 +55,9 @@ public class LocalTree extends Tree {
 		return Files.readAttributes(path, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS).group().getName();
 	}
 
-	private static int getMode(Path path) throws IOException {
+	private static short getMode(Path path) throws IOException {
 		Set<PosixFilePermission> perms = Files.getPosixFilePermissions(path);
-		int mode = 0;
+		short mode = 0;
 		for (PosixFilePermission perm : perms) {
 			switch (perm) {
 				case GROUP_EXECUTE:

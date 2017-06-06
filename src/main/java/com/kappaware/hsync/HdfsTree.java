@@ -41,7 +41,7 @@ public class HdfsTree extends Tree {
 		FileStatus[] fileStatuses = this.fileSystem.listStatus(folderPath);
 		for(FileStatus fs : fileStatuses) {
 			if(fs.isDirectory()) {
-				Folder folder = new Folder(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort());
+				Folder folder = new Folder(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime());
 				this.folderByName.put(folder.path, folder);
 				dig(fs.getPath());
 			} else {

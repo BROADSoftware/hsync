@@ -16,7 +16,9 @@
 package com.kappaware.hsync;
 
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,13 +37,16 @@ public class Tree {
 		public String path;
 		public String owner;
 		public String group;
-		public int mode;
+		public short mode;
+		public long modificationTime;
 		
-		public Folder(String path, String owner, String group, int mode) {
+		public Folder(String path, String owner, String group, short mode, long modificationTime) {
 			this.path = path;
 			this.owner = owner;
 			this.group = group;
 			this.mode = mode;
+			this.modificationTime = modificationTime;
+			
 		}
 
 		@Override
@@ -51,7 +56,8 @@ public class Tree {
 
 		@Override
 		public String toString() {
-			return String.format("%s  owner:%s  group:%s  mode:%04o ", path, owner, group, mode);
+			return String.format("[%04o] %-7s %-7s %8d %s %s", this.mode, this.owner, this.group, 0, FD(this.modificationTime) , this.path);
+			//return String.format("%s  owner:%s  group:%s  mode:%04o ", path, owner, group, mode);
 		}
 
 		@Override
@@ -72,17 +78,18 @@ public class Tree {
 		public int getMode() {
 			return this.mode;
 		}
+
 	}
 	
 	static public class File implements Comparable<File>, Node {
 		public String path;
 		public String owner;
 		public String group;
-		public int mode;
+		public short mode;
 		public long modificationTime;
 		public long size;
 
-		public File(String path, String owner, String group, int mode, long modificationTime, long size) {
+		public File(String path, String owner, String group, short mode, long modificationTime, long size) {
 			this.path = path;
 			this.owner = owner;
 			this.group = group;
@@ -93,7 +100,8 @@ public class Tree {
 
 		@Override
 		public String toString() {
-			return String.format("%s  owner:%s  group:%s  mode:%04o modTime:%d  size:%d", path, owner, group, mode, this.modificationTime, size);
+			return String.format(" %04o  %-7s %-7s %8d %s %s", this.mode, this.owner, this.group, this.size,  FD(this.modificationTime), this.path);
+			//return String.format("%s  owner:%s  group:%s  mode:%04o modTime:%d  size:%d", path, owner, group, mode, this.modificationTime, size);
 		}
 
 		@Override
@@ -118,6 +126,7 @@ public class Tree {
 		public int getMode() {
 			return this.mode;
 		}
+
 	}
 	public String root;
 	public Map<String, File> fileByName = new HashMap<String, File>();
@@ -126,7 +135,7 @@ public class Tree {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("ROOT: " + this.root + "\nFolders:\n");
+		sb.append(this.root + "  ----v\nFolders:\n");
 		List<Folder> folders = new Vector<Folder>(this.folderByName.values());
 		Collections.sort(folders);
 		for(Folder f : folders) {
@@ -141,7 +150,7 @@ public class Tree {
 		return sb.toString();
 	}
 	
-	public void adjustPermissions(String owner, String group, Integer fileMode, Integer folderMode) {
+	public void adjustPermissions(String owner, String group, Short fileMode, Short folderMode) {
 		if(owner != null || group != null || folderMode != null) {
 			for(Folder f : this.folderByName.values()) {
 				if(owner != null) {
@@ -170,4 +179,13 @@ public class Tree {
 		}
 	}
 	
+	// ------------------------------------------------------------------------------------
+	
+	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm");
+
+	static String FD(long ts) {
+		synchronized (sdf) {
+			return sdf.format(new Date(ts));
+		}
+	}	
 }

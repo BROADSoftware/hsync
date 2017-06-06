@@ -45,8 +45,8 @@ public class Parameters {
 	private List<String> notifySinks;
 	private String owner;
 	private String group;
-	private Integer fileMode;
-	private Integer folderMode;
+	private Short fileMode;
+	private Short folderMode;
 
 	static OptionParser parser = new OptionParser();
 	static {
@@ -153,9 +153,9 @@ public class Parameters {
 		return baos.toString();
 	}
 
-	private static Integer parseOctal(String s) {
+	private static Short parseOctal(String s) {
 		try {
-			return Integer.parseInt(s, 8);
+			return Short.parseShort(s, 8);
 		} catch (Throwable t) {
 			return null;
 		}
@@ -172,7 +172,7 @@ public class Parameters {
 		}
 	}
 
-	private static String O(Integer x) {
+	private static String O(Short x) {
 		if (x == null) {
 			return "null";
 		} else {
@@ -243,11 +243,11 @@ public class Parameters {
 		return group;
 	}
 
-	public Integer getFileMode() {
+	public Short getFileMode() {
 		return fileMode;
 	}
 
-	public Integer getFolderMode() {
+	public Short getFolderMode() {
 		return folderMode;
 	}
 

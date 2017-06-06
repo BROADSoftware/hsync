@@ -3,7 +3,6 @@
     <property>
       <name>fs.defaultFS</name>
       <value>hdfs://127.0.0.1:8020/</value>
-      <final>true</final>
     </property>
     
     <!-- 
