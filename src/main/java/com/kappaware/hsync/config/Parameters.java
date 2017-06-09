@@ -47,6 +47,8 @@ public class Parameters {
 	private String group;
 	private Short fileMode;
 	private Short folderMode;
+	private Integer threadCount;
+	private String clientId;
 
 	static OptionParser parser = new OptionParser();
 	static {
@@ -68,6 +70,10 @@ public class Parameters {
 	static OptionSpec<String> FILE_MODE_OPT = parser.accepts("fileMode", "mode of target files (Default: source one)").withRequiredArg().describedAs("0XXX").ofType(String.class);
 	static OptionSpec<String> FOLDER_MODE_OPT = parser.accepts("folderMode", "mode of target folders (Default: source one)").withRequiredArg().describedAs("0XXX").ofType(String.class);
 
+	static OptionSpec<Integer> THREADS_COUNT_OPT = parser.accepts("threads", "Number of acting threads").withRequiredArg().describedAs("<threadCount>").ofType(Integer.class).defaultsTo(1);
+	static OptionSpec<String> CLIENT_ID_OPT = parser.accepts("clientId", "Client identifier").withRequiredArg().describedAs("<clientId>").ofType(String.class).defaultsTo("hsync");
+
+	
 	@SuppressWarnings("serial")
 	private static class MyOptionException extends Exception {
 		public MyOptionException(String message) {
@@ -92,6 +98,8 @@ public class Parameters {
 			this.notifySinks = result.valuesOf(NOTIFY_SINKS_OPT);
 			this.owner = result.valueOf(OWNER_OPT);
 			this.group = result.valueOf(GROUP_OPT);
+			this.threadCount = result.valueOf(THREADS_COUNT_OPT);
+			this.clientId = result.valueOf(CLIENT_ID_OPT);
 			if (result.has(FILE_MODE_OPT)) {
 				this.fileMode = parseOctal(result.valueOf(FILE_MODE_OPT));
 				if (this.fileMode == null || this.fileMode < 0 || this.fileMode > 0777) {
@@ -134,6 +142,8 @@ public class Parameters {
 		sb.append(String.format("  group: %s\n", N(this.group)));
 		sb.append(String.format("  fileMode: %s\n", O(this.fileMode)));
 		sb.append(String.format("  folderMode: %s\n", O(this.folderMode)));
+		sb.append(String.format("  threadCount: %d\n", this.threadCount));
+		sb.append(String.format("  clientId: %s\n", N(this.clientId)));
 		return sb.toString();
 	}
 
@@ -251,4 +261,14 @@ public class Parameters {
 		return folderMode;
 	}
 
+	public Integer getThreadCount() {
+		return threadCount;
+	}
+
+	public String getClientId() {
+		return clientId;
+	}
+
+	
+	
 }

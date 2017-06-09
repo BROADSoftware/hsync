@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Vector;
 
 public class Tree {
+	static public final String TMP_EXT = "tmp_hsync";
 	
 	public interface Node {
 		String getOwner();

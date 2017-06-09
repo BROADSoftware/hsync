@@ -12,7 +12,6 @@ import com.kappaware.hsync.Tree.Node;
 import com.kappaware.hsync.Tree.File;
 
 public class TreeDiff {
-	static public final String TMP_EXT = "tmp_hsync";
 	
 	private List<Folder> foldersToCreate = new Vector<Folder>();
 	private List<Folder> foldersToAdjust = new Vector<Folder>();
@@ -45,7 +44,7 @@ public class TreeDiff {
 		Collections.sort(this.filesToAdjust);
 		Collections.sort(this.foldersToCreate);
 		for(File file : target.fileByName.values()) {
-			if(file.path.endsWith(TMP_EXT)) {
+			if(file.path.endsWith(Tree.TMP_EXT)) {
 				this.filesToDelete.add(file);
 			}
 		}
@@ -54,9 +53,9 @@ public class TreeDiff {
 				File src = entry.getValue();
 				File tgt = target.fileByName.get(entry.getKey());
 				if (src.size != tgt.size || src.modificationTime != tgt.modificationTime) {
-					this.filesToReplace.add(tgt);
+					this.filesToReplace.add(src);
 				} else if(!isPermissionEquals(src, tgt)) {
-					this.filesToAdjust.add(tgt);
+					this.filesToAdjust.add(src);
 				}
 			} else {
 				this.filesToCreate.add(entry.getValue());

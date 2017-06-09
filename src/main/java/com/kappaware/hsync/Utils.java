@@ -25,10 +25,15 @@ import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
-
+	static Logger log = LoggerFactory.getLogger(Utils.class);
+	
 	public static boolean isNullOrEmpty(String s) {
 		return (s == null || s.trim().length() == 0);
 	}
@@ -101,4 +106,22 @@ public class Utils {
 			return null;
 		}
 	}
+	
+	static public Path concatPath(String root, String path) {
+		return new Path(StringUtils.replace(root + "/" + path, "//", "/"));
+	}
+
+	static public String concatPath(Path root, Path path) {
+		return StringUtils.replace(root.toString() + "/" + path.toString(), "//", "/");
+	}
+ 	
+	
+	static public void sleep(long millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+			log.error("Interrupted in sleep");
+		}
+	}
+
 }

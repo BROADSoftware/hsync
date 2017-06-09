@@ -20,8 +20,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
+import java.util.Queue;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -32,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import com.kappaware.hsync.config.ConfigurationException;
 import com.kappaware.hsync.config.Parameters;
+import com.kappaware.hsync.notifier.DebugNotifier;
+import com.kappaware.hsync.notifier.Notifier;
 
 public class Main {
 	static Logger log = LoggerFactory.getLogger(Main.class);
@@ -90,9 +95,9 @@ public class Main {
 		Tree localTree = new LocalTree(parameters.getLocalPath());
 		log.debug("\nLocal: " + localTree.toString());
 		localTree.adjustPermissions(parameters.getOwner(), parameters.getGroup(), parameters.getFileMode(), parameters.getFolderMode());
-		
+
 		TreeDiff treeDiff = new TreeDiff(localTree, hdfsTree);
-		
+
 		if (Utils.hasText(parameters.getReportFile())) {
 			Writer out = null;
 			try {
@@ -106,32 +111,73 @@ public class Main {
 			}
 			log.info(String.format("Report file:'%s' has been generated", parameters.getReportFile()));
 		}
-		if(!parameters.isDryRun()) {
+		if (!parameters.isDryRun()) {
+			Notifier notifier = new DebugNotifier(new Path(hdfsTree.root), parameters.getClientId());
 			// --------------- First, cleanup dirty files
-			for(Tree.File file : treeDiff.getFilesToDelete()) {
-				Path path = concatPath(hdfsTree.root, file.path);
-				log.info(String.format("Will delete file '%s'", path.toString()));
+			for (Tree.File file : treeDiff.getFilesToDelete()) {
+				Path path = Utils.concatPath(hdfsTree.root, file.path);
 				fs.delete(path, false);
+				notifier.fileDeleted(path);
 			}
 			// ---------------- First, adjust folders
-			for(Tree.Folder folder : treeDiff.getFoldersToAdjust()) {
-				Path path = concatPath(hdfsTree.root, folder.path);
+			for (Tree.Folder folder : treeDiff.getFoldersToAdjust()) {
+				Path path = Utils.concatPath(hdfsTree.root, folder.path);
 				fs.setPermission(path, new FsPermission(folder.mode));
 				fs.setOwner(path, folder.owner, folder.group);
+				notifier.folderAdjusted(path, folder.owner, folder.group, folder.mode);
 			}
 			// ---------------- Now, create folder, in outer -> inner order, as folder or lexically ordered
-			for(Tree.Folder folder : treeDiff.getFoldersToCreate()) {
-				Path path = concatPath(hdfsTree.root, folder.path);
+			for (Tree.Folder folder : treeDiff.getFoldersToCreate()) {
+				Path path = Utils.concatPath(hdfsTree.root, folder.path);
 				fs.mkdirs(path, new FsPermission(folder.mode));
 				fs.setOwner(path, folder.owner, folder.group);
+				notifier.folderCreated(path, folder.owner, folder.group, folder.mode);
 			}
+			// Create and fed up the queue.
+			Queue<FileAction> queue = new ConcurrentLinkedQueue<FileAction>();
+			for (Tree.File file : treeDiff.getFilesToAdjust()) {
+				queue.add(new FileAction(FileAction.Type.ADJUST, file));
+			}
+			for (Tree.File file : treeDiff.getFilesToReplace()) {
+				queue.add(new FileAction(FileAction.Type.REPLACE, file));
+			}
+			for (Tree.File file : treeDiff.getFilesToCreate()) {
+				queue.add(new FileAction(FileAction.Type.COPY, file));
+			}
+			// And create consuming thread
+			List<FileThread> fileThreads = new Vector<FileThread>();
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				@Override
+				public void run() {
+					log.debug("Shutdown hook called!");
+					for (FileThread ft : fileThreads) {
+						ft.stopRunning();
+					}
+				}
+			});
+			for (int i = 0; i < parameters.getThreadCount(); i++) {
+				fileThreads.add(new FileThread(i, fs, localTree.root, hdfsTree.root, queue, notifier));
+			}
+			waitCompletion(fileThreads);
+			Utils.sleep(100); // To let message to be drained
 		}
-		
 		return 0;
 	}
-	
-	static private Path concatPath(String root, String path) {
-		return new Path(StringUtils.replace(root + "/" + path, "//", "/"));
+
+	private static void waitCompletion(List<FileThread> fileThreads) {
+		int fileCount = 0;
+		long volume = 0;
+		for (FileThread ft : fileThreads) {
+			try {
+				ft.join();
+				fileCount += ft.getFileCount();
+				volume += ft.getVolume();
+				log.info(String.format("Thread#%d: %d files handled, for a volume of %d KBytes", ft.getSlot(), ft.getFileCount(), ft.getVolume() / 1024));
+			} catch (InterruptedException e) {
+				log.debug(String.format("Interrupted in join of FileThread#%d", ft.getSlot()));
+			}
+		}
+		log.info(String.format("TOTAL: %d files handled, for a volume of %d KBytes (%d MBytes)", fileCount, volume / 1024, volume / (1024 * 1024)));
 	}
- 	
+
 }
