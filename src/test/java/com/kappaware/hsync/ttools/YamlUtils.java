@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.kappaware.hsync;
+package com.kappaware.hsync.ttools;
 
 import java.io.File;
 import java.io.IOException;

@@ -39,7 +39,7 @@ public class Parameters {
 	private String principal;
 	private String keytab;
 	private String dumpConfigFile;
-	private String reportFile;
+	private List<String> reportFiles;
 	private List<String> configFiles;
 	private boolean dryRun;
 	private List<String> notifySinks;
@@ -49,6 +49,7 @@ public class Parameters {
 	private Short folderMode;
 	private Integer threadCount;
 	private String clientId;
+	private List<String> excludes;
 
 	static OptionParser parser = new OptionParser();
 	static {
@@ -72,6 +73,7 @@ public class Parameters {
 
 	static OptionSpec<Integer> THREADS_COUNT_OPT = parser.accepts("threads", "Number of acting threads").withRequiredArg().describedAs("<threadCount>").ofType(Integer.class).defaultsTo(1);
 	static OptionSpec<String> CLIENT_ID_OPT = parser.accepts("clientId", "Client identifier").withRequiredArg().describedAs("<clientId>").ofType(String.class).defaultsTo("hsync");
+	static OptionSpec<String> EXCLUDES_OPT = parser.accepts("excludes", "Pattern of file to exclude").withRequiredArg().describedAs("filePattern").ofType(String.class);
 
 	
 	@SuppressWarnings("serial")
@@ -92,7 +94,7 @@ public class Parameters {
 			this.principal = result.valueOf(PRINCIPAL_OPT);
 			this.keytab = result.valueOf(KEYTAB_OPT);
 			this.dumpConfigFile = result.valueOf(DUMP_CONFIG_FILE_OPT);
-			this.reportFile = result.valueOf(REPORT_FILE_OPT);
+			this.reportFiles = result.valuesOf(REPORT_FILE_OPT);
 			this.configFiles = result.valuesOf(CONFIG_FILES_OPT);
 			this.dryRun = result.has(DRY_RUN_OPT);
 			this.notifySinks = result.valuesOf(NOTIFY_SINKS_OPT);
@@ -100,6 +102,7 @@ public class Parameters {
 			this.group = result.valueOf(GROUP_OPT);
 			this.threadCount = result.valueOf(THREADS_COUNT_OPT);
 			this.clientId = result.valueOf(CLIENT_ID_OPT);
+			this.excludes = result.valuesOf(EXCLUDES_OPT);
 			if (result.has(FILE_MODE_OPT)) {
 				this.fileMode = parseOctal(result.valueOf(FILE_MODE_OPT));
 				if (this.fileMode == null || this.fileMode < 0 || this.fileMode > 0777) {
@@ -134,7 +137,7 @@ public class Parameters {
 		sb.append(String.format("  principal: %s\n", N(this.principal)));
 		sb.append(String.format("  keytab: %s\n", N(this.keytab)));
 		sb.append(String.format("  dumpConfigFile: %s\n", N(this.dumpConfigFile)));
-		sb.append(String.format("  reportFile: %s\n", N(this.reportFile)));
+		sb.append(String.format("  reportFile: %s", L(this.reportFiles)));
 		sb.append(String.format("  configFiles: %s", L(this.configFiles)));
 		sb.append(String.format("  dryRun: %s\n", B(this.dryRun)));
 		sb.append(String.format("  notifySinks: %s", L(this.notifySinks)));
@@ -144,6 +147,7 @@ public class Parameters {
 		sb.append(String.format("  folderMode: %s\n", O(this.folderMode)));
 		sb.append(String.format("  threadCount: %d\n", this.threadCount));
 		sb.append(String.format("  clientId: %s\n", N(this.clientId)));
+		sb.append(String.format("  excludes: %s", L(this.excludes)));
 		return sb.toString();
 	}
 
@@ -229,8 +233,12 @@ public class Parameters {
 		return dumpConfigFile;
 	}
 
-	public String getReportFile() {
-		return reportFile;
+	/**
+	 * Being able to generate several was usefull for unit testing
+	 * @return
+	 */
+	public List<String> getReportFiles() {
+		return reportFiles;
 	}
 
 	public List<String> getConfigFiles() {
@@ -267,6 +275,10 @@ public class Parameters {
 
 	public String getClientId() {
 		return clientId;
+	}
+
+	public List<String> getExcludes() {
+		return excludes;
 	}
 
 	

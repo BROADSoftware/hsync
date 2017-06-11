@@ -1,4 +1,4 @@
-package com.kappaware.hsync;
+package com.kappaware.hsync.ttools;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,6 +28,14 @@ public class Ls {
 		}
 	}
 
+	/**
+	 * Equals means same set of node having the same path and, for file size and modificationTime (In sec). Don't compare owner, group or mode.
+	 */
+	@Override
+	public boolean equals(Object o) {
+		Ls other = (Ls) o;
+		return this.nodes.equals(other.nodes);
+	}
 
 	/**
 	 * HDFS config (fs.defaultFS) is assumed to be set in core-site.xml
@@ -38,15 +46,15 @@ public class Ls {
 	static public Ls hdfs(String root) throws IOException {
 		return new Ls(FileSystem.get(new Configuration()), new Path(root));
 	}
-	
 
-	
 	static public Ls local(String root) throws IOException {
+		if (!root.startsWith("/")) {
+			throw new IOException(String.format("Local path must be absolute ('%s' is not)", root));
+		}
 		Configuration configuration = new Configuration();
-		configuration.set("fs.defaultFS", "file:///");
-		return new Ls(FileSystem.get(configuration), new Path(root));
+		return new Ls(FileSystem.getLocal(configuration), new Path(root));
 	}
-	
+
 	private Ls(FileSystem fileSystem, Path rootPath) throws IOException {
 		this.fileSystem = fileSystem;
 		this.root = Path.getPathWithoutSchemeAndAuthority(rootPath).toString();
@@ -83,7 +91,7 @@ public class Ls {
 	String adjustPath(Path path) {
 		//return path.toString();
 		Path p2 = Path.getPathWithoutSchemeAndAuthority(path);
-		if("/".equals(this.root)) {
+		if ("/".equals(this.root)) {
 			return p2.toString();
 		} else {
 			return p2.toString().substring(this.root.length() + 1);
@@ -92,7 +100,6 @@ public class Ls {
 
 	public interface Node extends Comparable<Node> {
 		public String getPath();
-
 	}
 
 	static public class Folder implements Node {
@@ -122,7 +129,13 @@ public class Ls {
 
 		@Override
 		public String toString() {
-			return String.format("[%04o] %-7s %-7s %8d %s %s\n", this.mode, this.owner, this.group, 0, FD(this.modificationTime) , this.path);
+			return String.format("[%04o] %-7s %-7s %8d %s %s\n", this.mode, this.owner, this.group, 0, FD(this.modificationTime), this.path);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			Folder other = (Folder) o;
+			return this.path.equals(other.path);
 		}
 	}
 
@@ -155,8 +168,18 @@ public class Ls {
 
 		@Override
 		public String toString() {
-			return String.format(" %04o  %-7s %-7s %8d %s %s\n", this.mode, this.owner, this.group, this.size,  FD(this.modificationTime), this.path);
+			return String.format(" %04o  %-7s %-7s %8d %s %s\n", this.mode, this.owner, this.group, this.size, FD(this.modificationTime), this.path);
 		}
+
+		@Override
+		public boolean equals(Object o) {
+			File other = (File) o;
+			return this.path.equals(other.path) // 
+					&& this.modificationTime / 1000 == other.modificationTime / 1000 //
+					&& this.size == other.size //
+			;
+		}
+
 	}
 
 	@Override
@@ -168,13 +191,17 @@ public class Ls {
 		}
 		return sb.toString();
 	}
-	
+
 	public Node getByPath(String path) {
 		return this.nodeByPath.get(path);
 	}
-	
+
 	public int size() {
 		return this.nodes.size();
+	}
+
+	public FileSystem getFileSystem() {
+		return this.fileSystem;
 	}
 
 }

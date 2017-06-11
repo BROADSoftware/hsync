@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.kappaware.hsync.config.ConfigurationException;
 import com.kappaware.hsync.config.Parameters;
-import com.kappaware.hsync.notifier.DebugNotifier;
+import com.kappaware.hsync.notifier.InfoNotifier;
 import com.kappaware.hsync.notifier.Notifier;
 
 public class Main {
@@ -90,29 +90,31 @@ public class Main {
 			}
 		}
 		FileSystem fs = FileSystem.get(config);
-		Tree hdfsTree = new HdfsTree(fs, parameters.getHdfsPath());
+		Tree hdfsTree = new HdfsTree(fs, parameters.getHdfsPath(), null);
 		log.debug("\nHDFS: " + hdfsTree.toString());
-		Tree localTree = new LocalTree(parameters.getLocalPath());
+		Tree localTree = new LocalTree(parameters.getLocalPath(), parameters.getExcludes());
 		log.debug("\nLocal: " + localTree.toString());
 		localTree.adjustPermissions(parameters.getOwner(), parameters.getGroup(), parameters.getFileMode(), parameters.getFolderMode());
 
 		TreeDiff treeDiff = new TreeDiff(localTree, hdfsTree);
 
-		if (Utils.hasText(parameters.getReportFile())) {
-			Writer out = null;
-			try {
-				out = new BufferedWriter(new FileWriter(parameters.getReportFile(), false));
-				out.write(parameters.toYaml());
-				treeDiff.toYaml(out);
-			} finally {
-				if (out != null) {
-					out.close();
+		if (parameters.getReportFiles() != null && parameters.getReportFiles().size() > 0) {
+			for (String reportFile : parameters.getReportFiles()) {
+				Writer out = null;
+				try {
+					out = new BufferedWriter(new FileWriter(reportFile, false));
+					out.write(parameters.toYaml());
+					treeDiff.toYaml(out);
+				} finally {
+					if (out != null) {
+						out.close();
+					}
 				}
+				log.info(String.format("Report file:'%s' has been generated", reportFile));
 			}
-			log.info(String.format("Report file:'%s' has been generated", parameters.getReportFile()));
 		}
 		if (!parameters.isDryRun()) {
-			Notifier notifier = new DebugNotifier(new Path(hdfsTree.root), parameters.getClientId());
+			Notifier notifier = new InfoNotifier(new Path(hdfsTree.root), parameters.getClientId());
 			// --------------- First, cleanup dirty files
 			for (Tree.File file : treeDiff.getFilesToDelete()) {
 				Path path = Utils.concatPath(hdfsTree.root, file.path);
@@ -158,26 +160,31 @@ public class Main {
 			for (int i = 0; i < parameters.getThreadCount(); i++) {
 				fileThreads.add(new FileThread(i, fs, localTree.root, hdfsTree.root, queue, notifier));
 			}
-			waitCompletion(fileThreads);
+			int errorCount = waitCompletion(fileThreads);
 			Utils.sleep(100); // To let message to be drained
+			return errorCount;
+		} else {
+			return 0;
 		}
-		return 0;
 	}
 
-	private static void waitCompletion(List<FileThread> fileThreads) {
+	private static int waitCompletion(List<FileThread> fileThreads) {
 		int fileCount = 0;
 		long volume = 0;
+		int errorCount = 0;
 		for (FileThread ft : fileThreads) {
 			try {
 				ft.join();
 				fileCount += ft.getFileCount();
 				volume += ft.getVolume();
-				log.info(String.format("Thread#%d: %d files handled, for a volume of %d KBytes", ft.getSlot(), ft.getFileCount(), ft.getVolume() / 1024));
+				errorCount += ft.getErrorCount();
+				log.info(String.format("Thread#%02d: %d files handled, for a volume of %d bytes (%d KBytes) with %d error(s)", ft.getSlot(), ft.getFileCount(), ft.getVolume(), ft.getVolume() / 1024, ft.getErrorCount()));
 			} catch (InterruptedException e) {
 				log.debug(String.format("Interrupted in join of FileThread#%d", ft.getSlot()));
 			}
 		}
-		log.info(String.format("TOTAL: %d files handled, for a volume of %d KBytes (%d MBytes)", fileCount, volume / 1024, volume / (1024 * 1024)));
+		log.info(String.format("ALL: %d files handled, for a volume of %d KBytes (%d MBytes) with %d error(s)", fileCount, volume / 1024, volume / (1024 * 1024), errorCount));
+		return errorCount;
 	}
 
 }

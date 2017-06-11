@@ -16,6 +16,9 @@
 package com.kappaware.hsync;
 
 
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -24,8 +27,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.kappaware.hsync.config.ConfigurationException;
+
 public class Tree {
-	static public final String TMP_EXT = "tmp_hsync";
+	static Logger log = LoggerFactory.getLogger(Tree.class);
+	static public final String TMP_EXT = ".tmp_hsync";
+	
+	protected String root;	// Initialized by subclass
+	protected Map<String, File> fileByName = new HashMap<String, File>();
+	protected Map<String, Folder> folderByName = new HashMap<String, Folder>();
+	protected List<File> excludedFiles = new Vector<File>();
+	protected List<Folder> excludedFolders = new Vector<Folder>();
+	private List<PathMatcher> excludes = new Vector<PathMatcher>();
+
+	public Tree(List<String> excludeStrings) throws ConfigurationException, IOException {
+		if (excludeStrings != null) {
+			for (String s : excludeStrings) {
+				this.excludes.add(FileSystems.getDefault().getPathMatcher("glob:" + s));
+			}
+		}
+	}
+	
+	protected boolean isExcluded(String path) {
+		java.nio.file.Path p = (new java.io.File(path)).toPath();
+		for (PathMatcher pm : this.excludes) {
+			if (pm.matches(p)) {
+				log.debug(String.format("Node '%s' REFUSED", path));
+				return true;
+			}
+		}
+		log.debug(String.format("Node '%s' Accepted", path));
+		return false;
+	}
 	
 	public interface Node {
 		String getOwner();
@@ -127,12 +163,7 @@ public class Tree {
 		public int getMode() {
 			return this.mode;
 		}
-
 	}
-	public String root;
-	public Map<String, File> fileByName = new HashMap<String, File>();
-	public Map<String, Folder> folderByName = new HashMap<String, Folder>();
-	
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -146,6 +177,14 @@ public class Tree {
 		Collections.sort(files);
 		sb.append("Files:\n");
 		for(File f : files) {
+			sb.append("\t" + f.toString() + "\n");
+		}
+		sb.append("Excluded folders:\n");
+		for(Folder f : this.excludedFolders) {
+			sb.append("\t" + f.toString() + "\n");
+		}
+		sb.append("Excluded files:\n");
+		for(File f : this.excludedFiles) {
 			sb.append("\t" + f.toString() + "\n");
 		}
 		return sb.toString();
@@ -179,6 +218,16 @@ public class Tree {
 			}
 		}
 	}
+	
+	
+	public List<File> getExcludedFiles() {
+		return excludedFiles;
+	}
+
+	public List<Folder> getExcludedFolders() {
+		return excludedFolders;
+	}
+
 	
 	// ------------------------------------------------------------------------------------
 	

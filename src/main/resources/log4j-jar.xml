@@ -10,7 +10,7 @@
     </appender>
     
     
- 	<logger name="com.kappaware"><level value="debug"/></logger>
+ 	<logger name="com.kappaware"><level value="info"/></logger>
   
     
     <root>

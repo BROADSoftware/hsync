@@ -17,6 +17,8 @@ package com.kappaware.hsync;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -26,31 +28,47 @@ import com.kappaware.hsync.config.ConfigurationException;
 
 public class HdfsTree extends Tree {
 	FileSystem fileSystem;
-	
-	public HdfsTree(FileSystem fileSystem, String root) throws ConfigurationException, IOException {
+
+	public HdfsTree(FileSystem fileSystem, String root, List<String> excludeStrings) throws ConfigurationException, IOException {
+		super(excludeStrings);
 		this.fileSystem = fileSystem;
 		Path rootPath = new Path(root);
 		this.root = Path.getPathWithoutSchemeAndAuthority(rootPath).toString();
-		if(!this.fileSystem.isDirectory(rootPath)) {
+		if (!this.fileSystem.isDirectory(rootPath)) {
 			throw new ConfigurationException(String.format("HDFS path '%s' does not exists, or is not a folder", this.root));
 		}
 		dig(rootPath);
+		Collections.sort(this.excludedFiles);
+		Collections.sort(this.excludedFolders);
 	}
 
+	/*
+	 * TODO: Currently, exclusion is not tested on HdfsTree
+	 */
 	private void dig(Path folderPath) throws FileNotFoundException, IllegalArgumentException, IOException {
 		FileStatus[] fileStatuses = this.fileSystem.listStatus(folderPath);
-		for(FileStatus fs : fileStatuses) {
-			if(fs.isDirectory()) {
-				Folder folder = new Folder(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime());
-				this.folderByName.put(folder.path, folder);
-				dig(fs.getPath());
+		for (FileStatus fs : fileStatuses) {
+			if (fs.isDirectory()) {
+				String adjustedPath = this.adjustPath(fs.getPath());
+				Folder folder = new Folder(adjustedPath, fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime());
+				if (this.isExcluded(adjustedPath)) {
+					this.excludedFolders.add(folder);
+				} else {
+					this.folderByName.put(folder.path, folder);
+					dig(fs.getPath());
+				}
 			} else {
-				File file = new File(this.adjustPath(fs.getPath()), fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime(), fs.getLen());
-				this.fileByName.put(file.path, file);
+				String adjustedPath = this.adjustPath(fs.getPath());
+				File file = new File(adjustedPath, fs.getOwner(), fs.getGroup(), fs.getPermission().toShort(), fs.getModificationTime(), fs.getLen());
+				if (this.isExcluded(adjustedPath)) {
+					this.excludedFiles.add(file);
+				} else {
+					this.fileByName.put(file.path, file);
+				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Adjust the path relative to our root
 	 * @param path
@@ -59,11 +77,11 @@ public class HdfsTree extends Tree {
 	String adjustPath(Path path) {
 		//return path.toString();
 		Path p2 = Path.getPathWithoutSchemeAndAuthority(path);
-		if("/".equals(this.root)) {
+		if ("/".equals(this.root)) {
 			return p2.toString();
 		} else {
-			return p2.toString().substring(this.root.length() + 1);
+			return "." + p2.toString().substring(this.root.length());
 		}
 	}
-	
+
 }

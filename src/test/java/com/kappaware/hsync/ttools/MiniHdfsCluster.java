@@ -1,4 +1,4 @@
-package com.kappaware.hsync;
+package com.kappaware.hsync.ttools;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +11,7 @@ public class MiniHdfsCluster {
 	private MiniDFSCluster miniDFSCluster;
 	private Configuration hdfsConfig;
 
-	void start(int namenodePort) throws IOException {
+	public void start(int namenodePort) throws IOException {
 		File baseDir = new File("./tmp/minidfs").getAbsoluteFile();
 		System.out.println(baseDir.getPath());
 		FileUtil.fullyDelete(baseDir);
@@ -31,7 +31,7 @@ public class MiniHdfsCluster {
                 .build();
 	}
 
-	void stop() {
+	public void stop() {
 		this.miniDFSCluster.shutdown();
 	}
 }

@@ -19,6 +19,7 @@ public class TreeDiff {
 	private List<File> filesToReplace = new Vector<File>();
 	private List<File> filesToAdjust = new Vector<File>();
 	private List<File> filesToDelete = new Vector<File>();	// Only xxx.tmp_hsync (Remaining from a previous crashed run)
+	private Tree source;
 
 	
 	public void toYaml(Writer w) throws IOException {
@@ -28,10 +29,13 @@ public class TreeDiff {
 		L(w, "filesToReplace", this.filesToReplace);
 		L(w, "filesToAdjust", this.filesToAdjust);
 		L(w, "filesToDelete", this.filesToDelete);
+		L(w, "excludedFolders", this.source.getExcludedFolders());
+		L(w, "excludedFiles", this.source.getExcludedFiles());
 	}
 
 	
 	public TreeDiff(Tree source, Tree target) {
+		this.source = source;
 		for(Entry<String, Folder> entry : source.folderByName.entrySet())  {
 			if(target.folderByName.containsKey(entry.getKey())) {
 				if(!isPermissionEquals(entry.getValue(), target.folderByName.get(entry.getKey()))) {

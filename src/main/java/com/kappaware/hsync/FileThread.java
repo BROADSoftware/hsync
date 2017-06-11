@@ -25,6 +25,7 @@ public class FileThread extends Thread {
 	
 	private int fileCount = 0;
 	private long volume = 0;
+	private int errorCount = 0;
 	
 
 	public FileThread(int slot, FileSystem fileSystem, String srcPath, String tgtPath, Queue<FileAction> queue, Notifier notifier) {
@@ -80,6 +81,8 @@ public class FileThread extends Thread {
 				} catch (IOException e) {
 					notifier.error(new Path(file.path), "", e);
 					log.error(String.format("handling of '%s'", file.path), e);
+					errorCount++;
+					this.running = false;
 				}
 			}
 		}
@@ -90,9 +93,9 @@ public class FileThread extends Thread {
 		Path tmpTarget = Utils.concatPath(this.tgtPath, file.path + Tree.TMP_EXT);
 		Path src = Utils.concatPath(this.srcPath, file.path);
 		this.fileSystem.copyFromLocalFile(false, false, src, tmpTarget);
-		this.fileSystem.setPermission(target, new FsPermission(file.mode));
-		this.fileSystem.setOwner(target, file.owner, file.group);
-		this.fileSystem.setTimes(target, file.modificationTime, file.modificationTime);
+		this.fileSystem.setPermission(tmpTarget, new FsPermission(file.mode));
+		this.fileSystem.setOwner(tmpTarget, file.owner, file.group);
+		this.fileSystem.setTimes(tmpTarget, file.modificationTime, -1);
 		// We notify BEFORE renaming. In case of crash, we prefer having a false notification than missing a file
 		notifier.fileCopied(new Path(file.path), file.owner, file.group, file.mode, file.size, file.modificationTime);
 		this.fileSystem.rename(tmpTarget, target);
@@ -111,5 +114,7 @@ public class FileThread extends Thread {
 	public int getSlot() {
 		return this.slot;
 	}
-	
+	public int getErrorCount() {
+		return this.errorCount;
+	}
 }

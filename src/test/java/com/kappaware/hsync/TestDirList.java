@@ -11,6 +11,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.kappaware.hsync.ttools.Ls;
+import com.kappaware.hsync.ttools.MiniHdfsCluster;
+
 
 public class TestDirList {
 	static MiniHdfsCluster cluster;

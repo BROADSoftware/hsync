@@ -1,4 +1,4 @@
-package com.kappaware.hsync;
+package com.kappaware.hsync.ttools;
 
 import java.util.HashMap;
 import java.util.List;

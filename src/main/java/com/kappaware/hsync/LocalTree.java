@@ -7,6 +7,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import com.kappaware.hsync.config.ConfigurationException;
@@ -17,14 +19,16 @@ import com.kappaware.hsync.config.ConfigurationException;
 
 public class LocalTree extends Tree {
 
-	public LocalTree(String root) throws ConfigurationException, IOException {
+	public LocalTree(String root, List<String> excludeStrings) throws ConfigurationException, IOException {
+		super(excludeStrings);
 		java.io.File f = new java.io.File(root);
 		this.root = f.getAbsolutePath();
 		if (!f.isDirectory()) {
 			throw new ConfigurationException(String.format("Local path '%s' does not exists, or is not a folder", this.root));
 		}
 		dig(f);
-
+		Collections.sort(this.excludedFiles);
+		Collections.sort(this.excludedFolders);
 	}
 
 	private void dig(java.io.File f) throws IOException {
@@ -32,19 +36,33 @@ public class LocalTree extends Tree {
 		for (java.io.File file : files) {
 			if (file.isDirectory()) {
 				Path path = file.toPath();
-				Folder folder = new Folder(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path));
-				this.folderByName.put(folder.path, folder);
-				dig(file);
+				String adjustedPath = this.adjustPath(file);
+				Folder folder = new Folder(adjustedPath, getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path));
+				if (this.isExcluded(adjustedPath)) {
+					this.excludedFolders.add(folder);
+				} else {
+					this.folderByName.put(folder.path, folder);
+					dig(file);
+				}
 			} else {
 				Path path = file.toPath();
-				File fl = new File(this.adjustPath(file), getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path), Files.size(path));
-				this.fileByName.put(fl.path, fl);
+				String adjustedPath = this.adjustPath(file);
+				File fl = new File(adjustedPath, getOwner(path), getGroup(path), getMode(path), getLastModificationTime(path), Files.size(path));
+				if (this.isExcluded(adjustedPath)) {
+					this.excludedFiles.add(fl);
+				} else {
+					this.fileByName.put(fl.path, fl);
+				}
 			}
 		}
 	}
 
 	private String adjustPath(java.io.File file) {
-		return file.getAbsolutePath().substring(this.root.length() + 1);
+		if("/".equals(this.root)) {
+			return file.getAbsolutePath();
+		} else {
+			return "." + file.getAbsolutePath().substring(this.root.length());
+		}
 	}
 
 	private static String getOwner(Path path) throws IOException {
@@ -94,7 +112,7 @@ public class LocalTree extends Tree {
 		}
 		return mode;
 	}
-	
+
 	private static long getLastModificationTime(Path path) throws IOException {
 		return Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS).toMillis();
 	}
