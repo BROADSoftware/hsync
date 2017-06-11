@@ -204,4 +204,7 @@ public class Ls {
 		return this.fileSystem;
 	}
 
+	public List<Node> getNodes() {
+		return this.nodes;
+	}
 }

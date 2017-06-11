@@ -7,6 +7,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -42,6 +43,16 @@ public class TestBase {
 		fs.mkdirs(new Path("/tests/test09"));
 		fs.mkdirs(new Path("/tests/test10"));
 		fs.mkdirs(new Path("/tests/test11"));
+		// Apply a well defined set of permissions on source test tree, to have a well known start state
+		String lp = (new File("src/test/resources/")).getAbsolutePath();
+		Ls ls = Ls.local(lp);
+		for(Ls.Node node : ls.getNodes()) {
+			if(node instanceof Ls.File) {
+				ls.getFileSystem().setPermission(Utils.concatPath(lp, node.getPath()), new FsPermission((short)0644));
+			} else if(node instanceof Ls.Folder) {
+				ls.getFileSystem().setPermission(Utils.concatPath(lp, node.getPath()), new FsPermission((short)0755));
+			}
+		}
 	}
 
 	@AfterClass
@@ -196,7 +207,7 @@ public class TestBase {
 		String[] argv = new String[] { "--localPath", lp, "--hdfsPath", "/tests/test06", "--owner", "hdfs", "--group", "hadoop", "--fileMode", "0600" };
 		Main.main2(argv);
 		Ls lsHdfs = Ls.hdfs("/tests/test06");
-		//System.out.println(ls2.toString());
+		//System.out.println(lsHdfs.toString());
 		Ls.File node = (Ls.File) lsHdfs.getByPath("folder1/subfolder1/file1.txt");
 		Assert.assertNotNull(node);
 		Assert.assertEquals("hdfs", node.owner);
