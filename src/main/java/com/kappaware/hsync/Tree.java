@@ -58,6 +58,7 @@ public class Tree {
 				log.debug(String.format("Node '%s' REFUSED", path));
 				return true;
 			}
+			
 		}
 		log.debug(String.format("Node '%s' Accepted", path));
 		return false;

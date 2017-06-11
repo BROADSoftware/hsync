@@ -93,7 +93,7 @@ public class TestBase {
 		Assert.assertEquals(0, report.getList("excludedFiles").size());
 		Assert.assertNotNull(report.findPathInList("filesToDelete", "./file0.txt.tmp_hsync"));
 		Ls ls = Ls.hdfs("/tests/test02");
-		System.out.println(ls.toString());
+		//System.out.println(ls.toString());
 		Assert.assertEquals(0, ls.size());
 	}
 
@@ -234,7 +234,7 @@ public class TestBase {
 			Main.main2(argv2);
 			this.checkNothingToDo(argv2, "./tmp/report07b.yml");
 			Ls lsHdfs = Ls.hdfs("/tests/test07");
-			System.out.println(lsHdfs.toString());
+			//System.out.println(lsHdfs.toString());
 			Ls.File f1 = (com.kappaware.hsync.ttools.Ls.File) lsHdfs.getByPath("file1.txt");
 			Assert.assertNotNull(f1);
 			Assert.assertEquals(now / 1000, f1.modificationTime / 1000);
@@ -255,7 +255,7 @@ public class TestBase {
 			Main.main2(argv3);
 			this.checkNothingToDo(argv3, "./tmp/report07c.yml");
 			Ls lsHdfs = Ls.hdfs("/tests/test07");
-			System.out.println(lsHdfs.toString());
+			//System.out.println(lsHdfs.toString());
 			Ls.File f1 = (com.kappaware.hsync.ttools.Ls.File) lsHdfs.getByPath("file1.txt");
 			Assert.assertNotNull(f1);
 			Assert.assertEquals(now / 1000, f1.modificationTime / 1000);
@@ -345,7 +345,7 @@ public class TestBase {
 			Assert.assertEquals(3, report.getList("excludedFiles").size());
 
 			Ls ls = Ls.hdfs("/tests/test09");
-			System.out.println("============  " + ls.toString());
+			//System.out.println("============  " + ls.toString());
 			Assert.assertEquals(3, ls.size());
 			Assert.assertNotNull(ls.getByPath("file1.txt"));
 			Assert.assertNotNull(ls.getByPath("subdir"));
@@ -373,11 +373,11 @@ public class TestBase {
 			this.checkNothingToDo(argv, "./tmp/report09b.yml");
 
 			Ls lsHdfs = Ls.hdfs("/tests/test09");
-			System.out.println("============ HDFS  " + lsHdfs.toString());
+			//System.out.println("============ HDFS  " + lsHdfs.toString());
 			Assert.assertEquals(12, lsHdfs.size());
 			
 			Ls lsLocal = Ls.local(lp);
-			System.out.println("============ LOCAL  " + lsLocal.toString());
+			//System.out.println("============ LOCAL  " + lsLocal.toString());
 			Assert.assertEquals(lsHdfs,  lsLocal);
 		}
 	}
@@ -403,7 +403,7 @@ public class TestBase {
 			Assert.assertEquals(2, report.getList("excludedFiles").size());
 
 			Ls ls = Ls.hdfs("/tests/test10");
-			System.out.println("============  " + ls.toString());
+			//System.out.println("============  " + ls.toString());
 			Assert.assertEquals(6, ls.size());
 			Assert.assertNotNull(ls.getByPath("file1.txt"));
 			Assert.assertNotNull(ls.getByPath("subdir"));
@@ -416,7 +416,19 @@ public class TestBase {
 		}
 	}
 	
-	
+	@Test
+	public void test11MultiThread() throws ConfigurationException, IOException {
+		String lp = (new File("src/test/resources")).getAbsolutePath();
+		String[] argv = new String[] { "--localPath", lp, "--hdfsPath", "/tests/test11", "--owner", "hdfs", "--group", "hadoop", "--fileMode", "0600", "--folderMode", "0700", "--threads", "10"};
+		Main.main2(argv);
+		Ls lsHdfs = Ls.hdfs("/tests/test11");
+		//System.out.println("============ HDFS  " + lsHdfs.toString());
+		Ls lsLocal = Ls.local(lp);
+		//System.out.println("============ LOCAL  " + lsLocal.toString());
+		Assert.assertEquals(lsLocal, lsHdfs);
+		this.checkNothingToDo(argv, "./tmp/report10.yml");
+	}
+
 	
 	
 	private void checkNothingToDo(String[] argv, String reportFile) throws JsonParseException, JsonMappingException, IOException, ConfigurationException {

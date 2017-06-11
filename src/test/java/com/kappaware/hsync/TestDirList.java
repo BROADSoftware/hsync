@@ -47,7 +47,7 @@ public class TestDirList {
 		fs.copyFromLocalFile(new Path("src/test/resources/log4j.xml"), new Path("/tests/test00/log4j.xml"));
 
 		Ls dirList = Ls.hdfs("/");
-		System.out.println(dirList.toString());
+		//System.out.println(dirList.toString());
 		Assert.assertNotNull(dirList.getByPath("/tests/test00"));
 		Assert.assertNotNull(dirList.getByPath("/tests/test00"));
 		Assert.assertNotNull(dirList.getByPath("/tests/test00/log4j.xml"));
@@ -66,7 +66,7 @@ public class TestDirList {
 	public void testDirList01Local() throws IOException {
 		String lp = (new File("src/test/resources/test01")).getAbsolutePath();
 		Ls dirList = Ls.local(lp);
-		System.out.println(dirList.toString());
+		//System.out.println(dirList.toString());
 		Assert.assertNotNull(dirList.getByPath("file0"));
 		Assert.assertNotNull(dirList.getByPath("folder1"));
 		Assert.assertNotNull(dirList.getByPath("folder1/subfolder1/subfile1"));

@@ -113,7 +113,10 @@ public class Main {
 				log.info(String.format("Report file:'%s' has been generated", reportFile));
 			}
 		}
-		if (!parameters.isDryRun()) {
+		if (parameters.isDryRun()) {
+			log.info(String.format("DRY RUN Mode. file to createy:%d,  file to replace:%d,  file to adjust:%d   ", treeDiff.getFilesToCreate().size(), treeDiff.getFilesToReplace().size(), treeDiff.getFilesToAdjust().size()));
+			return 0;
+		} else {
 			Notifier notifier = new InfoNotifier(new Path(hdfsTree.root), parameters.getClientId());
 			// --------------- First, cleanup dirty files
 			for (Tree.File file : treeDiff.getFilesToDelete()) {
@@ -163,8 +166,6 @@ public class Main {
 			int errorCount = waitCompletion(fileThreads);
 			Utils.sleep(100); // To let message to be drained
 			return errorCount;
-		} else {
-			return 0;
 		}
 	}
 
