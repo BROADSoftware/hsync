@@ -46,6 +46,7 @@ dependencies {
 	compile "org.slf4j:slf4j-api:$sl4jApiVersion"
 	compile "org.slf4j:slf4j-log4j12:$sl4jLog4jVersion"
 	compile "log4j:log4j:$log4jVersion"
+    compileAndJar "org.apache.kafka:kafka-clients:$kafkaClientVersion"    
  	compileAndJar "net.sf.jopt-simple:jopt-simple:$joptVersion"
     compile "org.apache.hadoop:hadoop-common:$hadoopVersion"		
     compile "org.apache.hadoop:hadoop-hdfs:$hadoopVersion"		

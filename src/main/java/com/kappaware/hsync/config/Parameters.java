@@ -42,7 +42,7 @@ public class Parameters {
 	private List<String> reportFiles;
 	private List<String> configFiles;
 	private boolean dryRun;
-	private List<String> notifySinks;
+	private List<String> notifiers;
 	private String owner;
 	private String group;
 	private Short fileMode;
@@ -64,7 +64,7 @@ public class Parameters {
 	static OptionSpec<String> DUMP_CONFIG_FILE_OPT = parser.accepts("dumpConfigFile", "Debuging purpose: All HBaseConfiguration will be dumped in this file").withRequiredArg().describedAs("dump_file").ofType(String.class);
 	static OptionSpec<String> REPORT_FILE_OPT = parser.accepts("reportFile", "Allow tracking of performed operation").withRequiredArg().describedAs("report_file").ofType(String.class);
 	static OptionSpec<?> DRY_RUN_OPT = parser.accepts("dryRun", "Perform no action");
-	static OptionSpec<String> NOTIFY_SINKS_OPT = parser.accepts("notifySinks", "Sink to push notification on each copied file").withRequiredArg().describedAs("<notificationSink>").ofType(String.class);
+	static OptionSpec<String> NOTIFIERS_OPT = parser.accepts("notifiers", "Sink to push notification on each copied file").withRequiredArg().describedAs("<xxx://yyyyy>").ofType(String.class);
 
 	static OptionSpec<String> OWNER_OPT = parser.accepts("owner", "owner of target files (Default: source one)").withRequiredArg().describedAs("user").ofType(String.class);
 	static OptionSpec<String> GROUP_OPT = parser.accepts("group", "group of target files (Default: source one)").withRequiredArg().describedAs("group").ofType(String.class);
@@ -97,7 +97,7 @@ public class Parameters {
 			this.reportFiles = result.valuesOf(REPORT_FILE_OPT);
 			this.configFiles = result.valuesOf(CONFIG_FILES_OPT);
 			this.dryRun = result.has(DRY_RUN_OPT);
-			this.notifySinks = result.valuesOf(NOTIFY_SINKS_OPT);
+			this.notifiers = result.valuesOf(NOTIFIERS_OPT);
 			this.owner = result.valueOf(OWNER_OPT);
 			this.group = result.valueOf(GROUP_OPT);
 			this.threadCount = result.valueOf(THREADS_COUNT_OPT);
@@ -140,7 +140,7 @@ public class Parameters {
 		sb.append(String.format("  reportFile: %s", L(this.reportFiles)));
 		sb.append(String.format("  configFiles: %s", L(this.configFiles)));
 		sb.append(String.format("  dryRun: %s\n", B(this.dryRun)));
-		sb.append(String.format("  notifySinks: %s", L(this.notifySinks)));
+		sb.append(String.format("  notifiers: %s", L(this.notifiers)));
 		sb.append(String.format("  owner: %s\n", N(this.owner)));
 		sb.append(String.format("  group: %s\n", N(this.group)));
 		sb.append(String.format("  fileMode: %s\n", O(this.fileMode)));
@@ -249,8 +249,8 @@ public class Parameters {
 		return dryRun;
 	}
 
-	public List<String> getNotifySinks() {
-		return notifySinks;
+	public List<String> getNotifiers() {
+		return this.notifiers;
 	}
 
 	public String getOwner() {

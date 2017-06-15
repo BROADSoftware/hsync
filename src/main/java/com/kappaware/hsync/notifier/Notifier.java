@@ -25,4 +25,5 @@ public interface Notifier {
 	
 	void error(Path path, String message, Throwable t);
 
+	void close();
 }

@@ -23,7 +23,7 @@
  	<logger name="org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit"><level value="warn"/></logger>
    
    
- 	<logger name="com.kappaware"><level value="info"/></logger>
+ 	<logger name="com.kappaware"><level value="debug"/></logger>
    
    
     <root>

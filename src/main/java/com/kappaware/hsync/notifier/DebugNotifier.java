@@ -53,5 +53,9 @@ public class DebugNotifier extends NotifierFormater implements Notifier {
 		//log.error(message, t);
 	}
 
+	@Override
+	public void close() {
+	}
+
 
 }

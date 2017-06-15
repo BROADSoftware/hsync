@@ -35,8 +35,9 @@ import org.slf4j.LoggerFactory;
 
 import com.kappaware.hsync.config.ConfigurationException;
 import com.kappaware.hsync.config.Parameters;
-import com.kappaware.hsync.notifier.InfoNotifier;
 import com.kappaware.hsync.notifier.Notifier;
+import com.kappaware.hsync.notifier.NotifierFactory;
+import com.kappaware.hsync.notifier.NotifierFanout;
 
 public class Main {
 	static Logger log = LoggerFactory.getLogger(Main.class);
@@ -117,7 +118,7 @@ public class Main {
 			log.info(String.format("DRY RUN Mode. file to createy:%d,  file to replace:%d,  file to adjust:%d   ", treeDiff.getFilesToCreate().size(), treeDiff.getFilesToReplace().size(), treeDiff.getFilesToAdjust().size()));
 			return 0;
 		} else {
-			Notifier notifier = new InfoNotifier(new Path(hdfsTree.root), parameters.getClientId());
+			Notifier notifier = new NotifierFanout(NotifierFactory.newNotifierList(new Path(hdfsTree.root), parameters.getClientId(), parameters.getNotifiers()));
 			// --------------- First, cleanup dirty files
 			for (Tree.File file : treeDiff.getFilesToDelete()) {
 				Path path = Utils.concatPath(hdfsTree.root, file.path);
@@ -165,6 +166,7 @@ public class Main {
 			}
 			int errorCount = waitCompletion(fileThreads);
 			Utils.sleep(100); // To let message to be drained
+			notifier.close();
 			return errorCount;
 		}
 	}
