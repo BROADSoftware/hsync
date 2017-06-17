@@ -21,10 +21,19 @@
  	<logger name="org.apache.hadoop.hdfs.MiniDFSCluster"><level value="info"/></logger>
   	<!-- Wakeup some if interest (audit activity) -->
  	<logger name="org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit"><level value="warn"/></logger>
+
+
+ 	<logger name="kafka"><level value="warn"/></logger>
+ 	<logger name="org.apache.zookeeper"><level value="error"/></logger>
+ 	<logger name="org.apache.kafka.clients.consumer.ConsumerConfig"><level value="warn"/></logger>
+ 	<logger name="org.apache.kafka.clients.producer.ProducerConfig"><level value="warn"/></logger>
+ 	<logger name="org.I0Itec"><level value="warn"/></logger>
    
    
- 	<logger name="com.kappaware"><level value="debug"/></logger>
-   
+ 	<logger name="com.kappaware.hsync"><level value="info"/></logger>
+ 	<logger name="com.kappaware.hsync.ttools"><level value="info"/></logger>
+ 	
+ 	
    
     <root>
         <level value="info" /> 

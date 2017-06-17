@@ -17,17 +17,17 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.kappaware.hsync.config.ConfigurationException;
 import com.kappaware.hsync.ttools.Ls;
-import com.kappaware.hsync.ttools.MiniHdfsCluster;
+import com.kappaware.hsync.ttools.UnitHdfsCluster;
 import com.kappaware.hsync.ttools.Report;
 import com.kappaware.hsync.ttools.YamlUtils;
 import com.kappaware.hsync.ttools.Ls.Folder;
 
 public class TestBase {
-	static MiniHdfsCluster cluster;
+	static UnitHdfsCluster cluster;
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		cluster = new MiniHdfsCluster();
+		cluster = new UnitHdfsCluster();
 		cluster.start(8020);
 		FileSystem fs = FileSystem.get(new Configuration());
 		fs.mkdirs(new Path("/tests"));
@@ -43,6 +43,7 @@ public class TestBase {
 		fs.mkdirs(new Path("/tests/test09"));
 		fs.mkdirs(new Path("/tests/test10"));
 		fs.mkdirs(new Path("/tests/test11"));
+		fs.mkdirs(new Path("/tests/test12"));
 		// Apply a well defined set of permissions on source test tree, to have a well known start state
 		String lp = (new File("src/test/resources/")).getAbsolutePath();
 		Ls ls = Ls.local(lp);
@@ -85,7 +86,7 @@ public class TestBase {
 	@Test
 	public void test02Delete() throws IOException, ConfigurationException {
 		FileSystem fs = FileSystem.get(new Configuration());
-		fs.copyFromLocalFile(new Path("src/test/resources/test02/file1.txt"), new Path("/tests/test02/file0.txt.tmp_hsync"));
+		fs.copyFromLocalFile(new Path("src/test/resources/test02/file1.txt"), new Path("/tests/test02/file0.txt._TMP_HSYNC_"));
 		//System.out.println(Ls.hdfs("/tests").toString());
 		// Need to create an empty folder
 		String lp = (new File("src/test/resources/test02b")).getAbsolutePath();
@@ -102,7 +103,7 @@ public class TestBase {
 		Assert.assertEquals(1, report.getList("filesToDelete").size());
 		Assert.assertEquals(0, report.getList("excludedFolders").size());
 		Assert.assertEquals(0, report.getList("excludedFiles").size());
-		Assert.assertNotNull(report.findPathInList("filesToDelete", "./file0.txt.tmp_hsync"));
+		Assert.assertNotNull(report.findPathInList("filesToDelete", "./file0.txt._TMP_HSYNC_"));
 		Ls ls = Ls.hdfs("/tests/test02");
 		//System.out.println(ls.toString());
 		Assert.assertEquals(0, ls.size());
@@ -437,8 +438,46 @@ public class TestBase {
 		Ls lsLocal = Ls.local(lp);
 		//System.out.println("============ LOCAL  " + lsLocal.toString());
 		Assert.assertEquals(lsLocal, lsHdfs);
-		this.checkNothingToDo(argv, "./tmp/report10.yml");
+		this.checkNothingToDo(argv, "./tmp/report11.yml");
 	}
+
+	
+
+	@Test
+	public void test12ReplaceFolder() throws ConfigurationException, IOException {
+		String lp = (new File("src/test/resources/test12")).getAbsolutePath();
+		Ls local = Ls.local(lp);
+
+		{
+			String[] argv1 = new String[] { "--localPath", Utils.concatPath(lp, "a").toString(), "--hdfsPath", "/tests/test12", "--owner", "hdfs", "--group", "hadoop", "--fileMode", "0600",
+				"--notifier", "logs://debug"
+			};
+			Main.main2(argv1);
+			this.checkNothingToDo(argv1, "./tmp/report12a.yml");
+		}
+		{
+			String[] argv2 = new String[] { "--localPath", Utils.concatPath(lp, "b").toString(), "--hdfsPath", "/tests/test12", "--owner", "hdfs", "--group", "hadoop", "--fileMode", "0600",
+					"--notifier", "logs://debug"
+			};
+			Main.main2(argv2);
+			this.checkNothingToDo(argv2, "./tmp/report12b.yml");
+			Ls lsHdfs = Ls.hdfs("/tests/test12");
+			//System.out.println(lsHdfs.toString());
+			Ls.File f1 = (Ls.File) lsHdfs.getByPath("file1");
+			Assert.assertNotNull(f1);
+			Assert.assertEquals(((Ls.File) local.getByPath("b/file1")).modificationTime / 1000, f1.modificationTime / 1000);
+			Assert.assertEquals(((Ls.File) local.getByPath("b/file1")).size, f1.size);
+
+			Ls.Folder f1_001 = (Ls.Folder) lsHdfs.getByPath("file1_001");
+			Assert.assertNotNull(f1_001);
+			Ls.File f1_001_f1 = (Ls.File) lsHdfs.getByPath("file1_001/file1.txt");
+			Assert.assertNotNull(f1_001_f1);
+			Assert.assertEquals(((Ls.File) local.getByPath("a/file1/file1.txt")).modificationTime / 1000, f1_001_f1.modificationTime / 1000);
+			Assert.assertEquals(((Ls.File) local.getByPath("a/file1/file1.txt")).size, f1_001_f1.size);
+		}
+
+	}
+
 
 	
 	

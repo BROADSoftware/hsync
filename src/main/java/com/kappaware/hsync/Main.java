@@ -118,26 +118,26 @@ public class Main {
 			log.info(String.format("DRY RUN Mode. file to createy:%d,  file to replace:%d,  file to adjust:%d   ", treeDiff.getFilesToCreate().size(), treeDiff.getFilesToReplace().size(), treeDiff.getFilesToAdjust().size()));
 			return 0;
 		} else {
-			Notifier notifier = new NotifierFanout(NotifierFactory.newNotifierList(new Path(hdfsTree.root), parameters.getClientId(), parameters.getNotifiers()));
+			Notifier notifier = new NotifierFanout(NotifierFactory.newNotifierList(parameters.getClientId(), parameters.getNotifiers()));
 			// --------------- First, cleanup dirty files
 			for (Tree.File file : treeDiff.getFilesToDelete()) {
 				Path path = Utils.concatPath(hdfsTree.root, file.path);
 				fs.delete(path, false);
-				notifier.fileDeleted(path);
+				notifier.fileDeleted(path.toString());
 			}
 			// ---------------- First, adjust folders
 			for (Tree.Folder folder : treeDiff.getFoldersToAdjust()) {
 				Path path = Utils.concatPath(hdfsTree.root, folder.path);
 				fs.setPermission(path, new FsPermission(folder.mode));
 				fs.setOwner(path, folder.owner, folder.group);
-				notifier.folderAdjusted(path, folder.owner, folder.group, folder.mode);
+				notifier.folderAdjusted(path.toString(), folder.owner, folder.group, folder.mode);
 			}
 			// ---------------- Now, create folder, in outer -> inner order, as folder or lexically ordered
 			for (Tree.Folder folder : treeDiff.getFoldersToCreate()) {
 				Path path = Utils.concatPath(hdfsTree.root, folder.path);
 				fs.mkdirs(path, new FsPermission(folder.mode));
 				fs.setOwner(path, folder.owner, folder.group);
-				notifier.folderCreated(path, folder.owner, folder.group, folder.mode);
+				notifier.folderCreated(path.toString(), folder.owner, folder.group, folder.mode);
 			}
 			// Create and fed up the queue.
 			Queue<FileAction> queue = new ConcurrentLinkedQueue<FileAction>();

@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.hadoop.fs.Path;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -18,14 +17,14 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import com.kappaware.hsync.config.ConfigurationException;
 
-public class KafkaNotifier extends NotifierFormater implements Notifier {
+public class KafkaNotifier extends JsonFormater implements Notifier {
 	private KafkaProducer<String, String> producer;
 	private String topic;
 	
 	// --------------------------------------------------------------------------------------------------- Kafka stuff
 	
-	public KafkaNotifier(Path root, String clientId, String desc) throws ConfigurationException {
-		super(root, clientId);
+	public KafkaNotifier(String clientId, String desc) throws ConfigurationException {
+		super(clientId);
 		String withoutQuery;
 		String query;
 		String format;
@@ -161,51 +160,49 @@ public class KafkaNotifier extends NotifierFormater implements Notifier {
 
 	
 	private void send(String message) {
-		String m = "{ " + message + " }";		// The 'string' message can be easely converted to json.
-		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, null, m);
+		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, null, message);
 		this.producer.send(record);
-
 	}
 	
 	// ----------------------------------------------------------------------------------------- Notifier stuff
 	
 	@Override
-	public void fileRenamed(Path oldName, Path newName) {
+	public void fileRenamed(String oldName, String newName) {
 		this.send(this._fileRenamed(oldName, newName));
 	}
 
 	@Override
-	public void folderCreated(Path path, String owner, String group, short mode) {
+	public void folderCreated(String path, String owner, String group, short mode) {
 		this.send(this._folderCreated(path, owner, group, mode));
 	}
 
 	@Override
-	public void folderAdjusted(Path path, String owner, String group, short mode) {
+	public void folderAdjusted(String path, String owner, String group, short mode) {
 		this.send(this._folderAdjusted(path, owner, group, mode));
 	}
 
 	@Override
-	public void fileDeleted(Path path) {
+	public void fileDeleted(String path) {
 		this.send(this._fileDeleted(path));
 	}
 
 	@Override
-	public void startFileCopy(Path path) {
-		this.send(this._startFileCopy(path));
+	public void copyStarted(String path) {
+		this.send(this._copyStarted(path));
 	}
 
 	@Override
-	public void fileCopied(Path path, String owner, String group, short mode, long size, long modTime) {
+	public void fileCopied(String path, String owner, String group, short mode, long size, long modTime) {
 		this.send(this._fileCopied(path, owner, group, mode, size, modTime));
 	}
 
 	@Override
-	public void fileAdjusted(Path path, String owner, String group, short mode) {
+	public void fileAdjusted(String path, String owner, String group, short mode) {
 		this.send(this._fileAdjusted(path, owner, group, mode));
 	}
 
 	@Override
-	public void error(Path path, String message, Throwable t) {
+	public void error(String path, String message, Throwable t) {
 		this.send(this._error(path, message, t));
 	}
 

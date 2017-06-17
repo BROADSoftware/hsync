@@ -58,7 +58,7 @@ public class FileThread extends Thread {
 							Path path = Utils.concatPath(this.tgtPath, file.path);
 							fileSystem.setPermission(path, new FsPermission(file.mode));
 							fileSystem.setOwner(path, file.owner, file.group);
-							notifier.fileAdjusted(path, file.owner, file.group, file.mode);
+							notifier.fileAdjusted(path.toString(), file.owner, file.group, file.mode);
 						break;
 						case COPY:
 							this.copy(file);
@@ -71,7 +71,7 @@ public class FileThread extends Thread {
 								shadow = new Path(String.format("%s_%03d", target, x++));
 							} while( this.fileSystem.exists(shadow));
 							this.fileSystem.rename(target,  shadow);
-							notifier.fileRenamed(target, shadow);
+							notifier.fileRenamed(target.toString(), shadow.toString());
 							this.copy(file);
 						break;
 						default:
@@ -79,8 +79,9 @@ public class FileThread extends Thread {
 
 					}
 				} catch (IOException e) {
-					notifier.error(new Path(file.path), "", e);
-					log.error(String.format("handling of '%s'", file.path), e);
+					Path path = Utils.concatPath(this.tgtPath, file.path);
+					notifier.error(path.toString(), "", e);
+					log.error(String.format("handling of '%s'", path.toString()), e);
 					errorCount++;
 					this.running = false;
 				}
@@ -90,6 +91,7 @@ public class FileThread extends Thread {
 	
 	private void copy(Tree.File file) throws IOException {
 		Path target = Utils.concatPath(this.tgtPath, file.path);
+		notifier.copyStarted(target.toString());
 		Path tmpTarget = Utils.concatPath(this.tgtPath, file.path + Tree.TMP_EXT);
 		Path src = Utils.concatPath(this.srcPath, file.path);
 		this.fileSystem.copyFromLocalFile(false, false, src, tmpTarget);
@@ -97,7 +99,7 @@ public class FileThread extends Thread {
 		this.fileSystem.setOwner(tmpTarget, file.owner, file.group);
 		this.fileSystem.setTimes(tmpTarget, file.modificationTime, -1);
 		// We notify BEFORE renaming. In case of crash, we prefer having a false notification than missing a file
-		notifier.fileCopied(new Path(file.path), file.owner, file.group, file.mode, file.size, file.modificationTime);
+		notifier.fileCopied(target.toString(), file.owner, file.group, file.mode, file.size, file.modificationTime);
 		this.fileSystem.rename(tmpTarget, target);
 		this.fileCount++;
 		this.volume += file.size;

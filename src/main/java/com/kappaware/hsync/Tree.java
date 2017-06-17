@@ -34,7 +34,7 @@ import com.kappaware.hsync.config.ConfigurationException;
 
 public class Tree {
 	static Logger log = LoggerFactory.getLogger(Tree.class);
-	static public final String TMP_EXT = ".tmp_hsync";
+	static public final String TMP_EXT = "._TMP_HSYNC_";
 	
 	protected String root;	// Initialized by subclass
 	protected Map<String, File> fileByName = new HashMap<String, File>();

@@ -61,6 +61,9 @@ public class TreeDiff {
 				} else if(!isPermissionEquals(src, tgt)) {
 					this.filesToAdjust.add(src);
 				}
+			} else if (target.folderByName.containsKey(entry.getKey())) {
+				// We want to copy a file with same name as an existing folder on target. Rename the existing folder
+				this.filesToReplace.add(entry.getValue());
 			} else {
 				this.filesToCreate.add(entry.getValue());
 			}

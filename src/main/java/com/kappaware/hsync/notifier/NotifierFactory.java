@@ -3,7 +3,6 @@ package com.kappaware.hsync.notifier;
 import java.util.List;
 import java.util.Vector;
 
-import org.apache.hadoop.fs.Path;
 
 import com.kappaware.hsync.config.ConfigurationException;
 
@@ -24,22 +23,22 @@ import com.kappaware.hsync.config.ConfigurationException;
  */
 public class NotifierFactory {
 
-	static private Notifier newNotifier(Path root, String clientId, String desc) throws ConfigurationException {
+	static private Notifier newNotifier(String clientId, String desc) throws ConfigurationException {
 		if (desc.startsWith("logs://debug")) {
-			return new DebugNotifier(root, clientId);
+			return new DebugNotifier(clientId);
 		} else if (desc.startsWith("logs://info")) {
-			return new InfoNotifier(root, clientId);
+			return new InfoNotifier(clientId);
 		} else if (desc.startsWith("kafka://")) {
-			return new KafkaNotifier(root, clientId, desc);
+			return new KafkaNotifier(clientId, desc);
 		} else {
 			throw new ConfigurationException(String.format("Unreconized notification sink '%s'", desc));
 		}
 	}
 
-	static public List<Notifier> newNotifierList(Path root, String clientId, List<String> descs) throws ConfigurationException {
+	static public List<Notifier> newNotifierList(String clientId, List<String> descs) throws ConfigurationException {
 		List<Notifier> notifiers = new Vector<Notifier>(descs.size());
 		for (String desc : descs) {
-			notifiers.add(newNotifier(root, clientId, desc));
+			notifiers.add(newNotifier(clientId, desc));
 		}
 		return notifiers;
 	}

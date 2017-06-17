@@ -54,7 +54,18 @@ dependencies {
     testCompile "org.apache.hadoop:hadoop-minicluster:$hadoopVersion"		
 	testCompile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
 	testCompile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    
+    //testCompile "com.fasterxml.jackson.jr:jackson-jr-objects:$jacksonJrVersion"
+	testCompile("org.apache.zookeeper:zookeeper:$zookeeperVersion") {
+        exclude module: 'slf4j-log4j12'
+        exclude module: 'log4j'
+    }
+   testCompile("org.apache.kafka:kafka_${scalaVersion.substring(0,4)}:$kafkaVersion") {
+        exclude module: 'slf4j-simple'
+        exclude module: 'slf4j-log4j12'
+        exclude module: 'jmxtools'
+        exclude module: 'jmxri'
+        exclude module: 'jms'
+    }
 }
 
 

@@ -1,6 +1,5 @@
 package com.kappaware.hsync.notifier;
 
-import org.apache.hadoop.fs.Path;
 
 /**
  * All path are relative to targetRoot
@@ -9,21 +8,21 @@ import org.apache.hadoop.fs.Path;
  */
 public interface Notifier {
 	
-	void fileRenamed(Path oldName, Path newName);
+	void fileRenamed(String oldName, String newName);
 
-	void folderCreated(Path path, String owner, String group, short mode);
+	void folderCreated(String path, String owner, String group, short mode);
 
-	void folderAdjusted(Path path, String owner, String group, short mode);
+	void folderAdjusted(String path, String owner, String group, short mode);
 
-	void fileDeleted(Path path);
+	void fileDeleted(String path);
 	
-	void startFileCopy(Path path);
+	void copyStarted(String path);
 
-	void fileCopied(Path path, String owner, String group, short mode, long size, long modTime);
+	void fileCopied(String path, String owner, String group, short mode, long size, long modTime);
 
-	void fileAdjusted(Path path, String owner, String group, short mode);
+	void fileAdjusted(String path, String owner, String group, short mode);
 	
-	void error(Path path, String message, Throwable t);
+	void error(String path, String message, Throwable t);
 
 	void close();
 }

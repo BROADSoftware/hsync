@@ -7,7 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 
-public class MiniHdfsCluster {
+public class UnitHdfsCluster {
 	private MiniDFSCluster miniDFSCluster;
 	private Configuration hdfsConfig;
 

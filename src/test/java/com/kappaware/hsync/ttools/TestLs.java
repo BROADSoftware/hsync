@@ -1,4 +1,4 @@
-package com.kappaware.hsync;
+package com.kappaware.hsync.ttools;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,16 +11,13 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.kappaware.hsync.ttools.Ls;
-import com.kappaware.hsync.ttools.MiniHdfsCluster;
 
-
-public class TestDirList {
-	static MiniHdfsCluster cluster;
+public class TestLs {
+	static UnitHdfsCluster cluster;
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		cluster = new MiniHdfsCluster();
+		cluster = new UnitHdfsCluster();
 		cluster.start(8020);
 		Configuration conf = new Configuration();
 		FileSystem fs = FileSystem.get(conf);
@@ -42,34 +39,34 @@ public class TestDirList {
 	 * @throws IOException
 	 */
 	@Test
-	public void testDirList00Hdfs() throws IOException {
+	public void testLs00Hdfs() throws IOException {
 		FileSystem fs = FileSystem.get(new Configuration());
 		fs.copyFromLocalFile(new Path("src/test/resources/log4j.xml"), new Path("/tests/test00/log4j.xml"));
 
-		Ls dirList = Ls.hdfs("/");
+		Ls ls1 = Ls.hdfs("/");
 		//System.out.println(dirList.toString());
-		Assert.assertNotNull(dirList.getByPath("/tests/test00"));
-		Assert.assertNotNull(dirList.getByPath("/tests/test00"));
-		Assert.assertNotNull(dirList.getByPath("/tests/test00/log4j.xml"));
+		Assert.assertNotNull(ls1.getByPath("/tests/test00"));
+		Assert.assertNotNull(ls1.getByPath("/tests/test00"));
+		Assert.assertNotNull(ls1.getByPath("/tests/test00/log4j.xml"));
 		
-		Ls dirList2 = Ls.hdfs("/tests");
+		Ls ls2 = Ls.hdfs("/tests");
 		//System.out.println(dirList2.toString());
-		Assert.assertNotNull(dirList2.getByPath("test00"));
-		Assert.assertNotNull(dirList2.getByPath("test00/log4j.xml"));
+		Assert.assertNotNull(ls2.getByPath("test00"));
+		Assert.assertNotNull(ls2.getByPath("test00/log4j.xml"));
 
-		Ls dirList3 = Ls.hdfs("/tests/test00");
+		Ls ls3 = Ls.hdfs("/tests/test00");
 		//System.out.println(dirList3.toString());
-		Assert.assertNotNull(dirList3.getByPath("log4j.xml"));
+		Assert.assertNotNull(ls3.getByPath("log4j.xml"));
 	}
 
 	@Test
-	public void testDirList01Local() throws IOException {
+	public void testLs01Local() throws IOException {
 		String lp = (new File("src/test/resources/test01")).getAbsolutePath();
-		Ls dirList = Ls.local(lp);
+		Ls ls = Ls.local(lp);
 		//System.out.println(dirList.toString());
-		Assert.assertNotNull(dirList.getByPath("file0"));
-		Assert.assertNotNull(dirList.getByPath("folder1"));
-		Assert.assertNotNull(dirList.getByPath("folder1/subfolder1/subfile1"));
+		Assert.assertNotNull(ls.getByPath("file0"));
+		Assert.assertNotNull(ls.getByPath("folder1"));
+		Assert.assertNotNull(ls.getByPath("folder1/subfolder1/subfile1"));
 	}
 
 
