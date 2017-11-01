@@ -17,6 +17,7 @@
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'maven'
 
 
 defaultTasks 'uberJar'
@@ -84,15 +85,32 @@ jar {
 
 //create a single Jar with all dependencies
 task uberJar(type: Jar) {
+   classifier 'uber'
 	manifest {
         attributes 'Implementation-Title': 'hsync', 
         	'Implementation-Version': version,
         	'Main-Class': 'com.kappaware.hsync.Main'
     }
-    baseName = project.name + "_uber"
+    baseName = project.name
     from { configurations.compileAndJar.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
 
 
+artifacts {
+    archives uberJar
+}
+
+uploadArchives {
+   	repositories {
+       	 mavenDeployer {
+   			repository(url: "${nexusUrl}/content/repositories/releases/") {
+               	authentication(userName: nexusUserName, password: nexusUserPassword)
+           	}
+           	snapshotRepository(url: "${nexusUrl}/content/repositories/snapshots/") {
+               	authentication(userName: nexusUserName, password: nexusUserPassword)
+           	}
+   		}
+	}
+}
 
