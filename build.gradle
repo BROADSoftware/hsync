@@ -104,10 +104,10 @@ artifacts {
 uploadArchives {
    	repositories {
        	 mavenDeployer {
-   			repository(url: "${nexusUrl}/content/repositories/releases/") {
+   			repository(url: "${nexusReleaseUrl}") {
                	authentication(userName: nexusUserName, password: nexusUserPassword)
            	}
-           	snapshotRepository(url: "${nexusUrl}/content/repositories/snapshots/") {
+           	snapshotRepository(url: "${nexusSnapshotUrl}") {
                	authentication(userName: nexusUserName, password: nexusUserPassword)
            	}
    		}
