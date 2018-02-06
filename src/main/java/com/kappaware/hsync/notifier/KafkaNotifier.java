@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2017 BROADSoftware
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.kappaware.hsync.notifier;
 
 import java.io.UnsupportedEncodingException;
@@ -159,51 +174,51 @@ public class KafkaNotifier extends JsonFormater implements Notifier {
 	}
 
 	
-	private void send(String message) {
-		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, null, message);
+	private void send(String key, String message) {
+		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, key, message);
 		this.producer.send(record);
 	}
 	
 	// ----------------------------------------------------------------------------------------- Notifier stuff
-	
+	// We provide path as message key, in order to ensure all message for a given file go through the same partition
 	@Override
 	public void fileRenamed(String oldName, String newName) {
-		this.send(this._fileRenamed(oldName, newName));
+		this.send(oldName, this._fileRenamed(oldName, newName));
 	}
 
 	@Override
 	public void folderCreated(String path, String owner, String group, short mode) {
-		this.send(this._folderCreated(path, owner, group, mode));
+		this.send(path, this._folderCreated(path, owner, group, mode));
 	}
 
 	@Override
 	public void folderAdjusted(String path, String owner, String group, short mode) {
-		this.send(this._folderAdjusted(path, owner, group, mode));
+		this.send(path, this._folderAdjusted(path, owner, group, mode));
 	}
 
 	@Override
 	public void fileDeleted(String path) {
-		this.send(this._fileDeleted(path));
+		this.send(path, this._fileDeleted(path));
 	}
 
 	@Override
 	public void copyStarted(String path) {
-		this.send(this._copyStarted(path));
+		this.send(path, this._copyStarted(path));
 	}
 
 	@Override
 	public void fileCopied(String path, String owner, String group, short mode, long size, long modTime) {
-		this.send(this._fileCopied(path, owner, group, mode, size, modTime));
+		this.send(path, this._fileCopied(path, owner, group, mode, size, modTime));
 	}
 
 	@Override
 	public void fileAdjusted(String path, String owner, String group, short mode) {
-		this.send(this._fileAdjusted(path, owner, group, mode));
+		this.send(path, this._fileAdjusted(path, owner, group, mode));
 	}
 
 	@Override
 	public void error(String path, String message, Throwable t) {
-		this.send(this._error(path, message, t));
+		this.send(path, this._error(path, message, t));
 	}
 
 	@Override

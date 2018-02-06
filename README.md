@@ -51,7 +51,7 @@ MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LOG4J=-Dlog4j.configuration=file:${MYDIR}/log4j.xml
 
 # Warning: Setting our jar first may be important, as embeded libraries will take precedences.
-MY_CLASSPATH=$MYDIR/hsync_uber-0.1.0.jar:`hadoop classpath`
+MY_CLASSPATH=$MYDIR/hsync-0.1.0-uberjar:`hadoop classpath`
 
 java -classpath  $MY_CLASSPATH ${LOG4J} com.kappaware.hsync.Main --reportFile /tmp/report.yml \
    --excludes "**/.*" --notifier "logs://info" "$@"
